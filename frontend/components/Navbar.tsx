@@ -1,53 +1,105 @@
-"use client";
-
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Button } from "./retroui/Button";
+import { getSession, logoutAction } from "@/lib/auth";
 
-export default function Navbar() {
-  const pathname = usePathname();
+export default async function Navbar() {
+  const session = await getSession();
 
-  const role = "admin"; //dummy role, bisa diganti sesuai kebutuhan
-
-  const menu = [
-    { name: "Artist", path: "/artist" },
-    { name: "Ticket Category", path: "/ticket-category" },
-  ];
+  const getRoleMenus = () => {
+    if (!session) return null;
+    switch (session.role) {
+      case "admin":
+        return (
+          <>
+            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
+          </>
+        );
+      case "organizer":
+        return (
+          <>
+            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
+          </>
+        );
+      case "customer":
+      default:
+        return (
+          <>
+            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket Saya</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Venue</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Artis</Link>
+          </>
+        );
+    }
+  };
 
   return (
-    <nav className="w-full bg-white border-b border-orange-100 shadow-sm">
-
-      <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
-
-        {/* LOGO */}
-        <h1 className="text-xl font-black text-orange-500">
-          TikTakTuk
-        </h1>
-
-        {/* MENU */}
-        <div className="flex items-center gap-6">
-          {menu.map((item) => (
-            <Link
-              key={item.path}
-              href={item.path}
-              className={`
-                text-sm font-semibold transition
-                ${pathname === item.path
-                  ? "text-orange-500 border-b-2 border-orange-500 pb-1"
-                  : "text-gray-500 hover:text-orange-500"
-                }
-              `}
-            >
-              {item.name}
-            </Link>
-          ))}
+    <nav className="border-b-4 border-black bg-white flex flex-col md:flex-row items-center justify-between px-6 py-4 mx-4 md:mx-8 mb-8 mt-4 rounded-xl shadow-[6px_6px_0_0_#000] gap-4">
+      <div className="flex items-center gap-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
+        <Link href="/">
+          <span className="font-head text-3xl font-black text-black hover:text-primary transition-colors cursor-pointer tracking-tighter">
+            TikTakTuk
+          </span>
+        </Link>
+        <div className="hidden lg:flex items-center gap-4">
+           {getRoleMenus()}
         </div>
-
-        {/* ROLE BADGE */}
-        <div className="text-xs px-3 py-1 rounded-full bg-orange-50 text-orange-500 border border-orange-200">
-          {role}
-        </div>
-
       </div>
+      
+      <div className="flex items-center space-x-4">
+        {!session ? (
+          <>
+            <Link href="/login">
+              <Button variant="ghost" className="font-bold border-2 border-transparent">
+                Log in
+              </Button>
+            </Link>
+            <Link href="/register">
+              <Button variant="default" className="font-bold uppercase tracking-wide border-2 border-black shadow-[2px_2px_0_0_#000]">
+                Sign up
+              </Button>
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link href="/profile">
+              <Button variant="ghost" className="font-bold uppercase tracking-widest text-xs border-2 border-black hover:bg-primary">
+                Profile ({session.role})
+              </Button>
+            </Link>
+            <form action={logoutAction}>
+              <Button type="submit" className="font-bold uppercase tracking-wide bg-red-500 hover:bg-red-600 text-white border-2 border-black shadow-[2px_2px_0_0_#000]">
+                Logout
+              </Button>
+            </form>
+          </>
+        )}
+      </div>
+
+      {/* MOBILE MENU TOGGLE PLACEHOLDER - Menus are hidden on mobile by default to keep structure clean */}
+      {session && (
+         <div className="lg:hidden w-full flex overflow-x-auto gap-4 pb-2">
+            {getRoleMenus()}
+         </div>
+      )}
     </nav>
   );
 }
