@@ -12,7 +12,7 @@ export default async function Navbar() {
         return (
           <>
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="/dashboard/venues" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
@@ -25,8 +25,8 @@ export default async function Navbar() {
         return (
           <>
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="/dashboard/events" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
-            <Link href="/dashboard/venues" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
@@ -42,7 +42,7 @@ export default async function Navbar() {
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket Saya</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
-            <Link href="/events" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Venue</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Artis</Link>
@@ -60,10 +60,10 @@ export default async function Navbar() {
           </span>
         </Link>
         <div className="hidden lg:flex items-center gap-4">
-           {getRoleMenus()}
+          {getRoleMenus()}
         </div>
       </div>
-      
+
       <div className="flex items-center space-x-4">
         {!session ? (
           <>
@@ -96,9 +96,9 @@ export default async function Navbar() {
 
       {/* MOBILE MENU TOGGLE PLACEHOLDER - Menus are hidden on mobile by default to keep structure clean */}
       {session && (
-         <div className="lg:hidden w-full flex overflow-x-auto gap-4 pb-2">
-            {getRoleMenus()}
-         </div>
+        <div className="lg:hidden w-full flex overflow-x-auto gap-4 pb-2">
+          {getRoleMenus()}
+        </div>
       )}
     </nav>
   );
