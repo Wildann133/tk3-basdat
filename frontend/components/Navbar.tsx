@@ -25,7 +25,7 @@ export default async function Navbar() {
         return (
           <>
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
+            <Link href="/dashboard/events" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
             <Link href="/dashboard/venues" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
@@ -42,7 +42,7 @@ export default async function Navbar() {
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket Saya</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
+            <Link href="/events" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Venue</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Artis</Link>
