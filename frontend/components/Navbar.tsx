@@ -11,41 +11,44 @@ export default async function Navbar() {
       case "admin":
         return (
           <>
-            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
+            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Dashboard</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Manajemen Venue</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Manajemen Kursi</Link>
+            <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Kategori Tiket</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Manajemen Tiket</Link>
+            <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Artis</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Semua Order</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Tiket (Aset)</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Order (Aset)</Link>
           </>
         );
       case "organizer":
         return (
           <>
-            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
+            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Dashboard</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Event Saya</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Manajemen Venue</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Manajemen Kursi</Link>
+            <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Kategori Tiket</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Manajemen Tiket</Link>
+            <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Artis</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Semua Order</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Tiket (Aset)</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Order (Aset)</Link>
           </>
         );
       case "customer":
       default:
         return (
           <>
-            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket Saya</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Venue</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Artis</Link>
+            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Dashboard</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Tiket Saya</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Pesanan</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Cari Event</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Promosi</Link>
+            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Venue</Link>
+            {/* Path diubah ke /artists */}
+            <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors whitespace-nowrap">Artis</Link>
           </>
         );
     }
