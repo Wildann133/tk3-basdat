@@ -1,61 +1,66 @@
 import TicketCategoryTable from "./components/TicketCategoryTable";
+import { Ticket, Tags, ListOrdered } from "lucide-react";
 
 export default function TicketCategoryPage() {
   return (
-    <main className="min-h-screen bg-[#f9f6ef] relative overflow-hidden">
-
-      {/* Decorative blobs */}
-      <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-[#ffdb33]/25 -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[280px] h-[280px] rounded-full bg-[#ffdb33]/15 translate-y-1/2 -translate-x-1/4 pointer-events-none" />
-
-      <div className="relative z-10 max-w-5xl mx-auto px-8 pt-12 pb-16">
-
-        {/* HERO HEADER */}
-        <div className="mb-10 flex items-end justify-between">
-          <div>
-            {/* Overline */}
-            <div className="inline-flex items-center gap-2 mb-3">
-              <span className="block w-6 h-[3px] bg-black" />
-              <span className="font-head text-[0.6rem] tracking-[0.2em] uppercase text-black">
-                Dashboard
-              </span>
-            </div>
-
-            <h1 className="font-head text-5xl text-black leading-none tracking-tight">
-              Ticket{" "}
-              <span className="bg-[#ffdb33] px-1">
-                Category
-              </span>
+    <div className="flex-1 p-4 md:p-8 space-y-6 min-h-full w-full">
+      
+      {/* HEADER BENTO: 2 COLUMNS ON DESKTOP */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Main Welcome Card */}
+        <div className="col-span-1 md:col-span-2 bg-[#ffdb33] text-black p-6 md:p-10 rounded-2xl border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col justify-between relative overflow-hidden">
+          {/* Decorative Icon Background */}
+          <div className="absolute -bottom-10 -right-10 opacity-10 pointer-events-none">
+            <Ticket size={250} />
+          </div>
+          
+          <div className="relative z-10 mb-6">
+            <h2 className="text-xl font-bold uppercase tracking-widest border-2 border-black inline-block px-3 py-1 bg-white mb-4 shadow-[2px_2px_0_0_#000]">
+              Manajemen Tiket
+            </h2>
+            <h1 className="text-4xl md:text-6xl font-head tracking-tighter mb-4 leading-none">
+              Kategori <br /> Tiket Event
             </h1>
-
-            <p className="mt-3 text-gray-500 text-sm">
-              Kelola kategori tiket untuk setiap event dalam satu tempat.
+            <p className="text-lg font-bold opacity-80 max-w-xl bg-white/50 inline-block p-2 border-2 border-black">
+              Kelola klasifikasi, harga dasar, dan pengaturan kuota untuk setiap jenis tiket.
             </p>
           </div>
-
-          {/* Stat */}
-          <div className="hidden sm:flex flex-col items-end gap-0.5">
-            <span className="font-head text-5xl text-black leading-none">🎟</span>
-            <span className="font-head text-[0.6rem] tracking-[0.12em] uppercase text-gray-500">
-              Categories
-            </span>
-          </div>
         </div>
 
-        {/* MAIN CARD */}
-        <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] overflow-hidden">
-          <div className="h-[5px] bg-[#ffdb33] border-b-2 border-black" />
-          <div className="p-8">
-            <TicketCategoryTable />
+        {/* STAT HIGHLIGHT BENTO */}
+        <div className="col-span-1 bg-black text-white p-6 md:p-10 rounded-2xl border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col justify-center items-center text-center relative overflow-hidden group hover:bg-zinc-900 transition-colors">
+          <div className="absolute top-4 right-4 p-4 opacity-20 group-hover:opacity-100 transition-opacity duration-300">
+            <Tags size={64} className="text-[#ffdb33]" />
           </div>
+          {/* Icon/Angka stat di sini */}
+          <h3 className="text-7xl md:text-8xl font-black font-head text-[#ffdb33] drop-shadow-[3px_3px_0_#fff]">
+            🎟
+          </h3>
+          <p className="text-sm font-extrabold uppercase mt-2 border-t-4 border-[#ffdb33] pt-2 text-white">
+            Total Kategori <br /> Terdaftar
+          </p>
         </div>
-
-        {/* Footer */}
-        <p className="mt-6 text-center font-head text-[0.6rem] tracking-[0.15em] uppercase text-gray-400">
-          TikTakTuk
-        </p>
-
       </div>
-    </main>
+
+      {/* MAIN TABLE BENTO */}
+      <div className="bg-white rounded-2xl border-4 border-black shadow-[8px_8px_0_0_#000] overflow-hidden">
+        {/* Table Card Header */}
+        <div className="bg-black text-white p-6 flex justify-between items-center border-b-4 border-black">
+          <div>
+            <h2 className="text-2xl font-bold font-head tracking-wide flex items-center gap-3">
+              <ListOrdered size={28} className="text-[#ffdb33]" /> 
+              Daftar Kategori
+            </h2>
+            <p className="text-sm text-zinc-400 mt-1">Manajemen variasi jenis tiket dan kapasitas penonton</p>
+          </div>
+        </div>
+
+        {/* Table Content */}
+        <div className="p-6 md:p-8 bg-[#f9f6ef]">
+          <TicketCategoryTable />
+        </div>
+      </div>
+
+    </div>
   );
 }
