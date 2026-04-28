@@ -5,9 +5,9 @@ import VenueManager from "@/components/dashboard/venues/VenueManager";
 export default async function VenuesPage() {
   const session = await getSession();
 
-  // Protect route
-  if (!session || (session.role !== "admin" && session.role !== "organizer")) {
-    redirect("/dashboard");
+  // Protect route (Login required)
+  if (!session) {
+    redirect("/login");
   }
 
   return (
