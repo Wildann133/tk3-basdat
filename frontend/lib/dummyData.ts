@@ -35,11 +35,11 @@ export const ACCOUNT_ROLES = [
 ];
 
 export const VENUES = [
-  { venue_id: "v1", venue_name: "Jakarta Convention Center", capacity: 5000, address: "Jl. Gatot Subroto", city: "Jakarta Selatan" },
-  { venue_id: "v2", venue_name: "Taman Impian Jaya Ancol", capacity: 20000, address: "Jl. Lodan Timur", city: "Jakarta Utara" },
-  { venue_id: "v3", venue_name: "Bandung Hall Center", capacity: 3000, address: "Jl. Asia Afrika", city: "Bandung" },
-  { venue_id: "v4", venue_name: "Stadion Gelora Bung Karno", capacity: 77000, address: "Jl. Pintu Satu Senayan", city: "Jakarta Pusat" },
-  { venue_id: "v5", venue_name: "Senayan Park", capacity: 1500, address: "Jl. Gerbang Pemuda", city: "Jakarta Pusat" }
+  { venue_id: "v1", venue_name: "Jakarta Convention Center", capacity: 5000, address: "Jl. Gatot Subroto", city: "Jakarta Selatan", seating_type: "reserved seating" },
+  { venue_id: "v2", venue_name: "Taman Impian Jaya Ancol", capacity: 20000, address: "Jl. Lodan Timur", city: "Jakarta Utara", seating_type: "free seating" },
+  { venue_id: "v3", venue_name: "Bandung Hall Center", capacity: 3000, address: "Jl. Asia Afrika", city: "Bandung", seating_type: "reserved seating" },
+  { venue_id: "v4", venue_name: "Stadion Gelora Bung Karno", capacity: 77000, address: "Jl. Pintu Satu Senayan", city: "Jakarta Pusat", seating_type: "reserved seating" },
+  { venue_id: "v5", venue_name: "Senayan Park", capacity: 1500, address: "Jl. Gerbang Pemuda", city: "Jakarta Pusat", seating_type: "free seating" }
 ];
 
 export const ORGANIZERS = [
