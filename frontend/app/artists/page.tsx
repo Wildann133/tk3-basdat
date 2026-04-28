@@ -2,64 +2,58 @@ import ArtistTable from "./components/ArtistTable";
 
 export default function ArtistsPage() {
   return (
-    <main className="min-h-screen bg-[#FFF8F3] relative overflow-hidden">
+    <main className="min-h-screen bg-[#f9f6ef] relative overflow-hidden">
 
-      {/* Decorative geometric background */}
-      <div className="absolute top-0 right-0 w-[520px] h-[520px] rounded-full bg-orange-100/60 -translate-y-1/3 translate-x-1/3 pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[360px] h-[360px] rounded-full bg-amber-100/40 translate-y-1/2 -translate-x-1/4 pointer-events-none" />
-      <div className="absolute top-32 right-[480px] w-4 h-4 rounded-full bg-orange-400 pointer-events-none" />
-      <div className="absolute top-20 right-[320px] w-2 h-2 rounded-full bg-amber-400 pointer-events-none" />
+      {/* Decorative blobs */}
+      <div className="absolute top-0 right-0 w-[400px] h-[400px] rounded-full bg-[#ffdb33]/25 -translate-y-1/3 translate-x-1/3 pointer-events-none" />
+      <div className="absolute bottom-0 left-0 w-[280px] h-[280px] rounded-full bg-[#ffdb33]/15 translate-y-1/2 -translate-x-1/4 pointer-events-none" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-8 pt-12 pb-16">
 
         {/* HERO HEADER */}
         <div className="mb-10 flex items-end justify-between">
           <div>
-            {/* Overline tag */}
+            {/* Overline */}
             <div className="inline-flex items-center gap-2 mb-3">
-              <span className="block w-6 h-[3px] bg-orange-500 rounded-full" />
-              <span className="text-xs font-semibold tracking-[0.2em] text-orange-500 uppercase">
+              <span className="block w-6 h-[3px] bg-black" />
+              <span className="font-head text-[0.6rem] tracking-[0.2em] uppercase text-black">
                 Dashboard
               </span>
             </div>
 
-            <h1
-              className="text-5xl font-black text-gray-900 leading-none tracking-tight"
-              style={{ fontFamily: "'Georgia', serif" }}
-            >
-              Artist
-              <span className="text-orange-500 relative">
-                {" "}Management
-                {/* Underline accent */}
-                <span className="absolute -bottom-1 left-0 right-0 h-[3px] bg-orange-300 rounded-full block" />
+            <h1 className="font-head text-5xl text-black leading-none tracking-tight">
+              Artist{" "}
+              <span className="bg-[#ffdb33] px-1 relative">
+                Management
               </span>
             </h1>
 
-            <p className="mt-3 text-gray-500 text-base font-normal">
+            <p className="mt-3 text-gray-500 text-sm">
               Kelola, temukan, dan atur semua data artist dalam satu tempat.
             </p>
           </div>
 
-          {/* Stats pill */}
-          <div className="hidden sm:flex flex-col items-end gap-1">
-            <span className="text-4xl font-black text-orange-500 leading-none">∞</span>
-            <span className="text-xs text-gray-400 tracking-wide uppercase font-medium">Artists</span>
+          {/* Stat */}
+          <div className="hidden sm:flex flex-col items-end gap-0.5">
+            <span className="font-head text-5xl text-black leading-none">∞</span>
+            <span className="font-head text-[0.6rem] tracking-[0.12em] uppercase text-gray-500">
+              Artists
+            </span>
           </div>
         </div>
 
         {/* MAIN CARD */}
-        <div className="bg-white rounded-3xl shadow-[0_8px_48px_-12px_rgba(234,88,12,0.18)] border border-orange-100 overflow-hidden">
-
-          {/* Card top bar accent */}
-          <div className="h-1.5 bg-gradient-to-r from-orange-400 via-amber-400 to-orange-300" />
+        <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] overflow-hidden">
+          {/* Card top bar */}
+          <div className="h-[5px] bg-[#ffdb33] border-b-2 border-black" />
 
           <div className="p-8">
             <ArtistTable />
           </div>
         </div>
 
-        {/* Footer hint */}
-        <p className="mt-6 text-center text-xs text-gray-400 tracking-wide">
+        {/* Footer */}
+        <p className="mt-6 text-center font-head text-[0.6rem] tracking-[0.15em] uppercase text-gray-400">
           TikTakTuk
         </p>
 
