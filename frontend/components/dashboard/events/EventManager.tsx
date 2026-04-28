@@ -257,16 +257,17 @@ export default function EventManager({ role, userId }: { role: string; userId?: 
 
       {/* CUD Forms Modals */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm overflow-y-auto">
-          <Card className="w-full max-w-4xl bg-white border-4 border-black shadow-[8px_8px_0_0_#000] my-8 overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b-4 border-black bg-secondary sticky top-0 z-10">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/50 backdrop-blur-sm">
+          <Card className="w-full max-w-4xl bg-white border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col max-h-full overflow-hidden">
+            <div className="flex justify-between items-center p-6 border-b-4 border-black bg-secondary shrink-0">
               <h2 className="text-3xl font-head font-black">{editingEvent ? "Update Acara" : "Buat Acara Baru"}</h2>
               <button onClick={closeModal} className="p-2 bg-white border-2 border-black shadow-[2px_2px_0_0_#000] hover:bg-destructive hover:text-white transition-colors">
                 <X size={20} />
               </button>
             </div>
-            <CardContent className="p-6">
-              <form onSubmit={handleSave} className="space-y-6">
+            <CardContent className="p-0 flex flex-col min-h-0">
+              <form onSubmit={handleSave} className="flex flex-col min-h-0 h-full">
+                <div className="p-6 overflow-y-auto space-y-6 flex-1">
                 <div className="space-y-2">
                   <label className="font-bold text-sm tracking-widest uppercase text-zinc-600">Judul Acara (Event_Title)</label>
                   <Input 
@@ -390,8 +391,9 @@ export default function EventManager({ role, userId }: { role: string; userId?: 
                   />
                 </div>
 
-                <div className="pt-6 flex justify-end gap-4 mt-8 border-t-4 border-black/10">
-                  <Button type="button" onClick={closeModal} variant="outline" className="border-2 border-black font-bold">Batal</Button>
+                </div>
+                <div className="p-6 flex justify-end gap-4 border-t-4 border-black bg-zinc-50 shrink-0">
+                  <Button type="button" onClick={closeModal} variant="outline" className="border-2 border-black font-bold bg-white">Batal</Button>
                   <Button type="submit" className="bg-primary text-black hover:bg-black hover:text-white border-2 border-black font-bold shadow-[2px_2px_0_0_#000]">{editingEvent ? "Simpan" : "Buat Acara"}</Button>
                 </div>
               </form>
