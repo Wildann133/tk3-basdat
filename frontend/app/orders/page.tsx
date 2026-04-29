@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import OrdersClient from "@/components/orders/OrdersClient";
-import { getCustomerByUserId } from "@/lib/dummyData";
+import { getCustomerByUserId, getOrganizerByUserId } from "@/lib/dummyData";
 import { getSession } from "@/lib/auth";
 
 export default async function OrdersPage() {
@@ -9,14 +9,28 @@ export default async function OrdersPage() {
     redirect("/login");
   }
 
-  if (session.role !== "customer") {
-    redirect("/dashboard");
+  let customerId: string | undefined;
+  let organizerId: string | undefined;
+
+  if (session.role === "customer") {
+    const customer = getCustomerByUserId(session.user_id);
+    if (!customer) {
+      redirect("/dashboard");
+    }
+    customerId = customer.customer_id;
+  } else if (session.role === "organizer") {
+    const organizer = getOrganizerByUserId(session.user_id);
+    if (!organizer) {
+      redirect("/dashboard");
+    }
+    organizerId = organizer.organizer_id;
   }
 
-  const customer = getCustomerByUserId(session.user_id);
-  if (!customer) {
-    redirect("/dashboard");
-  }
-
-  return <OrdersClient customerId={customer.customer_id} />;
+  return (
+    <OrdersClient
+      role={session.role}
+      customerId={customerId}
+      organizerId={organizerId}
+    />
+  );
 }

@@ -17,7 +17,7 @@ export default async function Navbar() {
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
             <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kategori Tiket</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
+            <Link href="/orders" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
             <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Artis</Link>
@@ -34,7 +34,7 @@ export default async function Navbar() {
             <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kategori Tiket</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
             <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors"> Artis</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
+            <Link href="/orders" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
           </>

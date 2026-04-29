@@ -121,6 +121,14 @@ export function getCustomerByUserId(userId: string) {
   return CUSTOMERS.find((customer) => customer.user_id === userId) ?? null;
 }
 
+export function getOrganizerByUserId(userId: string) {
+  return ORGANIZERS.find((organizer) => organizer.user_id === userId) ?? null;
+}
+
+export function getEventById(eventId: string) {
+  return EVENTS.find((event) => event.event_id === eventId) ?? null;
+}
+
 export function findPromotionByCode(promoCode: string) {
   const normalized = promoCode.trim().toLowerCase();
   if (!normalized) return null;
