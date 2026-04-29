@@ -35,7 +35,15 @@ export async function loginAction(formData: FormData) {
   const roleObj = ROLES.find(r => r.role_id === accountRole?.role_id);
   
   // Ambil role_name (Administrator, Organizer, Customer) lalu kecilkan semua hurufnya
-  const role = roleObj ? roleObj.role_name.toLowerCase() : "customer";
+  let role = "customer";
+
+if (roleObj) {
+  const name = roleObj.role_name.toLowerCase();
+
+  if (name === "administrator") role = "admin";
+  else if (name === "organizer") role = "organizer";
+  else role = "customer";
+}
 
   // Set the session payload into a cookie
   const payload = {
