@@ -167,7 +167,7 @@ export default function VenueManager({ role }: { role: string }) {
                 </div>
                 {canManage && (
                   <div className="flex gap-2">
-                    <button onClick={() => openEditModal(venue)} className="p-2 bg-secondary text-black border-2 border-black shadow-[2px_2px_0_0_#000] hover:-translate-y-1 transition-transform" title="Edit">
+                    <button onClick={() => openEditModal(venue)} className="p-2 bg-[#ffdb33] text-black border-2 border-black shadow-[2px_2px_0_0_#000] hover:-translate-y-1 transition-transform" title="Edit">
                       <Edit size={16} />
                     </button>
                     <button onClick={() => openDeleteModal(venue.venue_id)} className="p-2 bg-destructive text-white border-2 border-black shadow-[2px_2px_0_0_#000] hover:-translate-y-1 transition-transform" title="Hapus">
@@ -198,7 +198,7 @@ export default function VenueManager({ role }: { role: string }) {
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <Card className="w-full max-w-lg bg-white border-4 border-black shadow-[8px_8px_0_0_#000]">
-            <div className="flex justify-between items-center p-6 border-b-4 border-black bg-secondary">
+            <div className="flex justify-between items-center p-6 border-b-4 border-black bg-[#ffdb33]">
               <h2 className="text-3xl font-head font-black">{editingVenue ? "Update Venue" : "Create Venue"}</h2>
               <button onClick={closeModal} className="p-2 bg-white border-2 border-black shadow-[2px_2px_0_0_#000] hover:bg-destructive hover:text-white transition-colors">
                 <X size={20} />
