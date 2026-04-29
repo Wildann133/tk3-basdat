@@ -28,6 +28,7 @@ type CarouselContextProps = {
     scrollNext: () => void
     canScrollPrev: boolean
     canScrollNext: boolean
+    mounted: boolean
 } & CarouselProps
 
 const CarouselContext = React.createContext<CarouselContextProps | null>(null)
@@ -58,6 +59,11 @@ function Carousel({
     )
     const [canScrollPrev, setCanScrollPrev] = React.useState(false)
     const [canScrollNext, setCanScrollNext] = React.useState(false)
+    const [mounted, setMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setMounted(true)
+    }, [])
 
     const onSelect = React.useCallback((api: CarouselApi) => {
         if (!api) return
@@ -114,6 +120,7 @@ function Carousel({
                 scrollNext,
                 canScrollPrev,
                 canScrollNext,
+                mounted,
             }}
         >
             <div
@@ -175,7 +182,7 @@ function CarouselPrevious({
     size = "icon",
     ...props
 }: React.ComponentProps<typeof Button>) {
-    const { orientation, scrollPrev, canScrollPrev } = useCarousel()
+    const { orientation, scrollPrev, canScrollPrev, mounted } = useCarousel()
 
     return (
         <Button
@@ -189,7 +196,7 @@ function CarouselPrevious({
                     : "-top-12 left-1/2 -translate-x-1/2 rotate-90 hover:-translate-x-[calc(50%-2px)] active:-translate-x-[calc(50%-4px)]",
                 className
             )}
-            disabled={!canScrollPrev}
+            disabled={mounted ? !canScrollPrev : false}
             onClick={scrollPrev}
             {...props}
         >
@@ -205,7 +212,7 @@ function CarouselNext({
     size = "icon",
     ...props
 }: React.ComponentProps<typeof Button>) {
-    const { orientation, scrollNext, canScrollNext } = useCarousel()
+    const { orientation, scrollNext, canScrollNext, mounted } = useCarousel()
 
     return (
         <Button
@@ -219,7 +226,7 @@ function CarouselNext({
                     : "-bottom-12 left-1/2 -translate-x-1/2 rotate-90 hover:-translate-x-[calc(50%-2px)] active:-translate-x-[calc(50%-4px)]",
                 className
             )}
-            disabled={!canScrollNext}
+            disabled={mounted ? !canScrollNext : false}
             onClick={scrollNext}
             {...props}
         >
