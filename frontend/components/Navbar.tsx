@@ -1,54 +1,77 @@
 import Link from "next/link";
 import { Button } from "./retroui/Button";
 import { getSession, logoutAction } from "@/lib/auth";
+import NavbarDropdown from "./NavbarDropdown";
 
 export default async function Navbar() {
   const session = await getSession();
 
-  const getRoleMenus = () => {
+  const getRoleMenus = (isMobile = false) => {
     if (!session) return null;
+
+    let menus: { href: string; label: string }[] = [];
+
     switch (session.role) {
       case "admin":
-        return (
-          <>
-            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
-          </>
-        );
+        menus = [
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "#", label: "Manajemen Venue" },
+          { href: "#", label: "Manajemen Kursi" },
+          { href: "#", label: "Kategori Tiket" },
+          { href: "#", label: "Manajemen Tiket" },
+          { href: "#", label: "Semua Order" },
+          { href: "#", label: "Tiket (Aset)" },
+          { href: "#", label: "Order (Aset)" },
+        ];
+        break;
       case "organizer":
-        return (
-          <>
-            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Kategori Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
-          </>
-        );
+        menus = [
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "#", label: "Event Saya" },
+          { href: "#", label: "Manajemen Venue" },
+          { href: "#", label: "Manajemen Kursi" },
+          { href: "#", label: "Kategori Tiket" },
+          { href: "#", label: "Manajemen Tiket" },
+          { href: "#", label: "Semua Order" },
+          { href: "#", label: "Tiket (Aset)" },
+          { href: "#", label: "Order (Aset)" },
+        ];
+        break;
       case "customer":
       default:
-        return (
-          <>
-            <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket Saya</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Venue</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Artis</Link>
-          </>
-        );
+        menus = [
+          { href: "/dashboard", label: "Dashboard" },
+          { href: "#", label: "Tiket Saya" },
+          { href: "#", label: "Pesanan" },
+          { href: "#", label: "Cari Event" },
+          { href: "#", label: "Promosi" },
+          { href: "#", label: "Venue" },
+          { href: "#", label: "Artis" },
+        ];
+        break;
     }
+
+    if (isMobile) {
+      return menus.map((menu, index) => (
+        <Link key={index} href={menu.href} className="text-sm font-bold hover:text-primary transition-colors">
+          {menu.label}
+        </Link>
+      ));
+    }
+
+    const visibleMenus = menus.slice(0, 4);
+    const hiddenMenus = menus.slice(4);
+
+    return (
+      <>
+        {visibleMenus.map((menu, index) => (
+          <Link key={index} href={menu.href} className="text-sm font-bold hover:text-primary transition-colors">
+            {menu.label}
+          </Link>
+        ))}
+        {hiddenMenus.length > 0 && <NavbarDropdown items={hiddenMenus} />}
+      </>
+    );
   };
 
   return (
@@ -102,7 +125,7 @@ export default async function Navbar() {
         {/* MOBILE MENU TOGGLE PLACEHOLDER */}
         {session && (
           <div className="lg:hidden absolute top-14 left-0 w-full bg-white border-2 border-black p-4 flex flex-col gap-4 shadow-[4px_4px_0_0_#000] hidden">
-            {getRoleMenus()}
+            {getRoleMenus(true)}
           </div>
         )}
       </nav>
