@@ -59,8 +59,10 @@ export default async function Navbar() {
       ));
     }
 
-    const visibleMenus = menus.slice(0, 4);
-    const hiddenMenus = menus.slice(4);
+    const LIMIT = 4;
+    const hasHidden = menus.length > LIMIT;
+    const visibleMenus = hasHidden ? menus.slice(0, LIMIT - 1) : menus;
+    const hiddenMenus = hasHidden ? menus.slice(LIMIT - 1) : [];
 
     return (
       <>
@@ -69,7 +71,7 @@ export default async function Navbar() {
             {menu.label}
           </Link>
         ))}
-        {hiddenMenus.length > 0 && <NavbarDropdown items={hiddenMenus} />}
+        {hasHidden && <NavbarDropdown items={hiddenMenus} />}
       </>
     );
   };
