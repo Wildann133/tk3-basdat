@@ -52,54 +52,60 @@ export default async function Navbar() {
   };
 
   return (
-    <nav className="border-b-4 border-black bg-white flex flex-col md:flex-row items-center justify-between px-6 py-4 mx-4 md:mx-8 mb-8 mt-4 rounded-xl shadow-[6px_6px_0_0_#000] gap-4">
-      <div className="flex items-center gap-6 w-full md:w-auto overflow-x-auto pb-2 md:pb-0 scrollbar-hide">
-        <Link href="/">
-          <span className="font-head text-3xl font-black text-black hover:text-primary transition-colors cursor-pointer tracking-tighter">
-            TikTakTuk
-          </span>
-        </Link>
-        <div className="hidden lg:flex items-center gap-4">
+    <div className="fixed top-6 left-0 right-0 z-50 flex justify-center px-4 pointer-events-none">
+      <nav className="pointer-events-auto border-2 border-black bg-[#fdfdfc] flex items-center justify-between px-4 py-2 w-full max-w-5xl shadow-[4px_4px_0_0_#000] gap-4">
+        <div className="flex items-center gap-6">
+          <Link href="/">
+            <span className="font-head text-2xl font-black text-black hover:text-primary transition-colors cursor-pointer tracking-tighter flex items-center gap-2">
+              <div className="w-6 h-6 rounded-full border-2 border-black bg-yellow-400 relative overflow-hidden flex items-center justify-center shrink-0">
+                <div className="w-3 h-3 bg-white rounded-full border border-black absolute top-0.5 left-0.5"></div>
+              </div>
+              TikTakTuk
+            </span>
+          </Link>
+        </div>
+
+        <div className="hidden lg:flex items-center gap-6 text-sm font-medium">
           {getRoleMenus()}
         </div>
-      </div>
 
-      <div className="flex items-center space-x-4">
-        {!session ? (
-          <>
-            <Link href="/login">
-              <Button variant="ghost" className="font-bold border-2 border-transparent">
-                Log in
-              </Button>
-            </Link>
-            <Link href="/register">
-              <Button variant="default" className="font-bold uppercase tracking-wide border-2 border-black shadow-[2px_2px_0_0_#000]">
-                Sign up
-              </Button>
-            </Link>
-          </>
-        ) : (
-          <>
-            <Link href="/profile">
-              <Button variant="ghost" className="font-bold uppercase tracking-widest text-xs border-2 border-black hover:bg-primary">
-                Profile ({session.role})
-              </Button>
-            </Link>
-            <form action={logoutAction}>
-              <Button type="submit" className="font-bold uppercase tracking-wide bg-red-500 hover:bg-red-600 text-white border-2 border-black shadow-[2px_2px_0_0_#000]">
-                Logout
-              </Button>
-            </form>
-          </>
+        <div className="flex items-center space-x-3">
+          {!session ? (
+            <>
+              <Link href="/login">
+                <Button variant="ghost" className="bg-white text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none">
+                  Log in
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="default" className="bg-yellow-400 text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none">
+                  Sign up
+                </Button>
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/profile">
+                <Button variant="ghost" className="bg-white text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none w-[100px]">
+                  Profile
+                </Button>
+              </Link>
+              <form action={logoutAction}>
+                <Button type="submit" className="bg-red-500 text-white font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none w-[100px]">
+                  Logout
+                </Button>
+              </form>
+            </>
+          )}
+        </div>
+
+        {/* MOBILE MENU TOGGLE PLACEHOLDER */}
+        {session && (
+          <div className="lg:hidden absolute top-14 left-0 w-full bg-white border-2 border-black p-4 flex flex-col gap-4 shadow-[4px_4px_0_0_#000] hidden">
+            {getRoleMenus()}
+          </div>
         )}
-      </div>
-
-      {/* MOBILE MENU TOGGLE PLACEHOLDER - Menus are hidden on mobile by default to keep structure clean */}
-      {session && (
-        <div className="lg:hidden w-full flex overflow-x-auto gap-4 pb-2">
-          {getRoleMenus()}
-        </div>
-      )}
-    </nav>
+      </nav>
+    </div>
   );
 }
