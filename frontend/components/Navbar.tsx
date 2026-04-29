@@ -46,8 +46,8 @@ export default async function Navbar() {
           <>
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket Saya</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
+            <Link href="/orders" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
+            <Link href="/events" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Venue</Link>
             <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors"> Kategori Tiket</Link>

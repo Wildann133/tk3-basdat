@@ -81,6 +81,84 @@ export const PROMOTIONS = [
   { promotion_id: "p6", promo_code: "FLASH", discount_type: "NOMINAL", discount_value: 100000, start_date: "2024-06-01", end_date: "2024-06-02", usage_limit: 10 }
 ];
 
+export const EVENT_TICKET_CATEGORIES: Record<
+  string,
+  { id: string; name: string; price: number; capacity: number }[]
+> = {
+  e1: [
+    { id: "e1-wvip", name: "WVIP", price: 900000, capacity: 60 },
+    { id: "e1-vip", name: "VIP", price: 500000, capacity: 200 },
+    { id: "e1-cat1", name: "Category 1", price: 250000, capacity: 1200 },
+  ],
+  e2: [
+    { id: "e2-vip", name: "VIP", price: 420000, capacity: 250 },
+    { id: "e2-cat1", name: "Category 1", price: 180000, capacity: 1500 },
+  ],
+  e3: [
+    { id: "e3-vip", name: "VIP", price: 450000, capacity: 180 },
+    { id: "e3-cat1", name: "Category 1", price: 210000, capacity: 900 },
+  ],
+  e4: [
+    { id: "e4-wvip", name: "WVIP", price: 1200000, capacity: 80 },
+    { id: "e4-vip", name: "VIP", price: 700000, capacity: 350 },
+    { id: "e4-cat1", name: "Category 1", price: 320000, capacity: 3500 },
+  ],
+  e5: [
+    { id: "e5-vip", name: "VIP", price: 300000, capacity: 150 },
+    { id: "e5-cat1", name: "Category 1", price: 140000, capacity: 700 },
+  ],
+  e6: [
+    { id: "e6-vip", name: "VIP", price: 650000, capacity: 300 },
+    { id: "e6-cat1", name: "Category 1", price: 300000, capacity: 2000 },
+  ],
+};
+
+export function getTicketCategoriesByEventId(eventId: string) {
+  return EVENT_TICKET_CATEGORIES[eventId] ?? [];
+}
+
+export function getCustomerByUserId(userId: string) {
+  return CUSTOMERS.find((customer) => customer.user_id === userId) ?? null;
+}
+
+export function findPromotionByCode(promoCode: string) {
+  const normalized = promoCode.trim().toLowerCase();
+  if (!normalized) return null;
+  return (
+    PROMOTIONS.find(
+      (promotion) => promotion.promo_code.toLowerCase() === normalized
+    ) ?? null
+  );
+}
+
+export function calculateDiscountedTotal(params: {
+  subtotal: number;
+  promoCode?: string;
+}) {
+  const subtotal = Math.max(0, params.subtotal);
+  const promo = params.promoCode ? findPromotionByCode(params.promoCode) : null;
+
+  if (!promo) {
+    return {
+      promo: null,
+      discountAmount: 0,
+      totalAmount: subtotal,
+    };
+  }
+
+  const discountAmount =
+    promo.discount_type === "PERCENTAGE"
+      ? Math.floor((subtotal * promo.discount_value) / 100)
+      : promo.discount_value;
+  const clampedDiscount = Math.min(subtotal, Math.max(0, discountAmount));
+
+  return {
+    promo,
+    discountAmount: clampedDiscount,
+    totalAmount: subtotal - clampedDiscount,
+  };
+}
+
 // Provide helper objects mimicking backend aggregation for the dashboards
 export const ADMIN_STATS = {
   totalUsers: 2543,
