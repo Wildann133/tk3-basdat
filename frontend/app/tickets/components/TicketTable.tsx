@@ -61,7 +61,8 @@ const buildInitialRows = (): TicketRow[] =>
 
 /* ──────────────────────────────────────────────────────────── */
 export default function TicketTable({ role }: { role?: string }) {
-  const canManage = role === "admin" || role === "organizer";
+  const canCreate = role === "admin" || role === "organizer";
+  const canDelete = role === "admin";
 
   const [tickets, setTickets] = useState<TicketRow[]>(buildInitialRows);
   const [search, setSearch] = useState("");
@@ -121,7 +122,7 @@ export default function TicketTable({ role }: { role?: string }) {
             {filtered.length} tiket
           </span>
 
-          {canManage && <TicketForm onSave={handleSave} existingTickets={tickets} />}
+          {canCreate && <TicketForm onSave={handleSave} existingTickets={tickets} />}
         </div>
       </div>
 
@@ -148,7 +149,7 @@ export default function TicketTable({ role }: { role?: string }) {
               <th className="px-5 py-3 text-left font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">
                 Kursi
               </th>
-              {canManage && (
+              {canDelete && (
                 <th className="px-5 py-3 text-center font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33] w-32">
                   Aksi
                 </th>
@@ -204,7 +205,7 @@ export default function TicketTable({ role }: { role?: string }) {
                 </td>
 
                 {/* Aksi */}
-                {canManage && (
+                {canDelete && (
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-center gap-2">
                       <button
@@ -231,7 +232,7 @@ export default function TicketTable({ role }: { role?: string }) {
       </div>
 
       {/* MODAL DELETE */}
-      {deleteId && canManage && (
+      {deleteId && canDelete && (
         <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 px-4">
           <div
             className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] w-full max-w-sm"
