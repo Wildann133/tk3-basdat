@@ -2,6 +2,7 @@ import { Button } from "@/components/retroui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/retroui/Card";
 import { Users, Calendar, TrendingUp, TicketPercent, ArrowUpRight, CheckCircle2 } from "lucide-react";
 import { ADMIN_STATS } from "@/lib/dummyData";
+import Link from "next/link";
 
 export default function AdminDashboard() {
   return (
@@ -13,9 +14,11 @@ export default function AdminDashboard() {
           <h1 className="text-4xl md:text-5xl font-head tracking-tighter mb-2 leading-none">System Console</h1>
           <p className="text-black/80 font-medium text-lg">Pantau dan kelola seluruh aktivitas platform TikTakTuk</p>
         </div>
+        <Link href="/promotions">
         <Button className="bg-white text-black hover:bg-zinc-100 border-4 border-black font-bold text-lg px-8 py-6 rounded-xl shadow-[4px_4px_0_0_#000] transition-transform hover:-translate-y-1">
           Buka Promosi
         </Button>
+        </Link>
       </div>
 
       {/* BENTO GRID */}
@@ -56,9 +59,11 @@ export default function AdminDashboard() {
                 <span className="text-3xl font-head text-white">1,000 Kursi</span>
               </div>
             </div>
+            <Link href="/venues">
             <Button className="w-full mt-8 bg-primary text-black hover:bg-primary-hover border-4 border-black rounded-xl text-lg tracking-wide shadow-[4px_4px_0_0_#000]">
               Kelola Venue Sekarang
             </Button>
+            </Link>
           </CardContent>
         </Card>
 

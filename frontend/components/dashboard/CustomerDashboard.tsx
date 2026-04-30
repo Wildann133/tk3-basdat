@@ -1,6 +1,7 @@
+import Link from "next/link";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
-import { Ticket, Calendar, Tag, Music, MapPin, CalendarDays, Search } from "lucide-react";
+import { Ticket, Calendar, Tag, Music, MapPin, CalendarDays, Search, Link as LinkIcon } from "lucide-react";
 import { CUSTOMER_STATS, EVENTS } from "@/lib/dummyData";
 
 export default function CustomerDashboard() {
@@ -16,9 +17,12 @@ export default function CustomerDashboard() {
             <h1 className="text-4xl md:text-5xl font-head tracking-tighter mb-2">Welcome Back, Budi Santoso!</h1>
             <p className="text-lg font-medium opacity-80">Ada {CUSTOMER_STATS.availablePromos} acara menarik yang menunggu Anda.</p>
           </div>
-          <Button className="w-fit bg-black text-white hover:bg-zinc-800 border-4 border-black font-bold text-lg px-8 py-6 rounded-xl shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
-            <Search className="mr-2" /> Cari Tiket & Acara
-          </Button>
+          <Link href="/events">
+            <Button className="w-fit bg-black text-white hover:bg-zinc-800 border-4 border-black font-bold text-lg px-8 py-6 rounded-xl shadow-[4px_4px_0_0_rgba(255,255,255,1)] hover:shadow-none hover:translate-x-1 hover:translate-y-1 transition-all">
+              Cari Tiket & Acara
+            </Button>
+          </Link>
+          
         </div>
 
         {/* PROMO HIGHLIGHT BENTO */}
@@ -74,9 +78,11 @@ export default function CustomerDashboard() {
               <h2 className="text-2xl font-bold font-head tracking-wide">Tiket Mendatang</h2>
               <p className="text-sm text-zinc-400">Tiket pertunjukan yang siap Anda nikmati</p>
             </div>
+            <Link href="/my-tickets">
             <Button variant="outline" className="bg-white text-black hover:bg-primary border-2 border-black font-bold">
               Lihat Semua
             </Button>
+            </Link>
           </div>
 
           <div className="p-6 space-y-4 bg-zinc-50">

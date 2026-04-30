@@ -33,8 +33,8 @@ export default function RootLayout({
         className={`${archivoBlack.variable} ${space.variable} antialiased min-h-screen flex flex-col font-sans bg-background text-foreground`}
       >
         <Navbar />
-        <main className="flex-1 w-full">
-          <div className="mx-auto w-full max-w-[1400px] px-4 md:px-8 pt-4 flex flex-col min-h-full">
+        <main className="flex-1 w-full flex flex-col mt-20">
+          <div className="mx-auto w-full max-w-[1400px] px-4 md:px-8 flex flex-col flex-1">
             {children}
           </div>
         </main>
