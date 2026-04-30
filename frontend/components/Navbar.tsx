@@ -14,7 +14,7 @@ export default async function Navbar() {
           <>
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
+            <Link href="/seats" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
             <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kategori Tiket</Link>
             <Link href="/tickets" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
@@ -30,7 +30,7 @@ export default async function Navbar() {
             <Link href="/dashboard" className="text-sm font-bold hover:text-primary transition-colors">Dashboard</Link>
             <Link href="/my-events" className="text-sm font-bold hover:text-primary transition-colors">Event Saya</Link>
             <Link href="/manage-venue" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Venue</Link>
-            <Link href="/manage-seats" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
+            <Link href="/seats" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kursi</Link>
             <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Kategori Tiket</Link>
             <Link href="/tickets" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
             <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors"> Artis</Link>

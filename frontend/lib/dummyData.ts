@@ -113,25 +113,25 @@ export const TICKET_CATEGORIES = [
 // ─── SEATS (only for reserved seating venues: v1, v3, v4) ──────────
 export const SEATS = [
   // v1 - Jakarta Convention Center
-  { seat_id: "s1",  section: "A", row: 1, number: 1, venue_id: "v1" },
-  { seat_id: "s2",  section: "A", row: 1, number: 2, venue_id: "v1" },
-  { seat_id: "s3",  section: "A", row: 1, number: 3, venue_id: "v1" },
-  { seat_id: "s4",  section: "A", row: 2, number: 1, venue_id: "v1" },
-  { seat_id: "s5",  section: "A", row: 2, number: 2, venue_id: "v1" },
-  { seat_id: "s6",  section: "B", row: 1, number: 1, venue_id: "v1" },
-  { seat_id: "s7",  section: "B", row: 1, number: 2, venue_id: "v1" },
-  { seat_id: "s8",  section: "B", row: 2, number: 1, venue_id: "v1" },
+  { seat_id: "s1",  section: "VVIP",    row: "A", number: 1, venue_id: "v1" },
+  { seat_id: "s2",  section: "VVIP",    row: "A", number: 2, venue_id: "v1" },
+  { seat_id: "s3",  section: "VVIP",    row: "A", number: 3, venue_id: "v1" },
+  { seat_id: "s4",  section: "VVIP",    row: "B", number: 1, venue_id: "v1" },
+  { seat_id: "s5",  section: "VVIP",    row: "B", number: 2, venue_id: "v1" },
+  { seat_id: "s6",  section: "VIP",     row: "A", number: 1, venue_id: "v1" },
+  { seat_id: "s7",  section: "VIP",     row: "A", number: 2, venue_id: "v1" },
+  { seat_id: "s8",  section: "Regular", row: "A", number: 1, venue_id: "v1" },
   // v3 - Bandung Hall Center
-  { seat_id: "s9",  section: "C", row: 1, number: 1, venue_id: "v3" },
-  { seat_id: "s10", section: "C", row: 1, number: 2, venue_id: "v3" },
-  { seat_id: "s11", section: "C", row: 2, number: 1, venue_id: "v3" },
-  { seat_id: "s12", section: "D", row: 1, number: 1, venue_id: "v3" },
+  { seat_id: "s9",  section: "VIP",     row: "1", number: 1, venue_id: "v3" },
+  { seat_id: "s10", section: "VIP",     row: "1", number: 2, venue_id: "v3" },
+  { seat_id: "s11", section: "VIP",     row: "2", number: 1, venue_id: "v3" },
+  { seat_id: "s12", section: "Tribune", row: "1", number: 1, venue_id: "v3" },
   // v4 - Stadion Gelora Bung Karno
-  { seat_id: "s13", section: "E", row: 1, number: 1, venue_id: "v4" },
-  { seat_id: "s14", section: "E", row: 1, number: 2, venue_id: "v4" },
-  { seat_id: "s15", section: "E", row: 2, number: 1, venue_id: "v4" },
-  { seat_id: "s16", section: "F", row: 1, number: 1, venue_id: "v4" },
-  { seat_id: "s17", section: "F", row: 1, number: 2, venue_id: "v4" },
+  { seat_id: "s13", section: "VVIP",    row: "1", number: 1, venue_id: "v4" },
+  { seat_id: "s14", section: "VVIP",    row: "1", number: 2, venue_id: "v4" },
+  { seat_id: "s15", section: "VIP",     row: "1", number: 1, venue_id: "v4" },
+  { seat_id: "s16", section: "VIP",     row: "1", number: 2, venue_id: "v4" },
+  { seat_id: "s17", section: "Regular", row: "1", number: 1, venue_id: "v4" },
 ];
 
 // ─── HAS_RELATIONSHIP – seat ↔ ticket assignment ───────────────────
