@@ -94,35 +94,58 @@ export default async function Navbar() {
           {getRoleMenus()}
         </div>
 
-        <div className="flex items-center space-x-3">
-          {!session ? (
-            <>
-              <Link href="/login">
-                <Button variant="ghost" className="bg-white text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none">
-                  Log in
-                </Button>
-              </Link>
-              <Link href="/register">
-                <Button variant="default" className="bg-yellow-400 text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none">
-                  Sign up
-                </Button>
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link href="/profile">
-                <Button variant="ghost" className="bg-white text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none w-[100px]">
-                  Profile
-                </Button>
-              </Link>
-              <form action={logoutAction}>
-                <Button type="submit" className="bg-red-500 text-white font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none w-[100px]">
-                  Logout
-                </Button>
-              </form>
-            </>
-          )}
-        </div>
+<div className="flex items-center space-x-4">
+  {!session ? (
+    <>
+      <Link href="/promotions">
+        <Button
+          variant="ghost"
+          className="bg-white text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none"
+        >
+          Promosi
+        </Button>
+      </Link>
+
+      <Link href="/login">
+        <Button
+          variant="ghost"
+          className="bg-white text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none"
+        >
+          Log in
+        </Button>
+      </Link>
+
+      <Link href="/register">
+        <Button
+          variant="default"
+          className="bg-yellow-400 text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none"
+        >
+          Sign up
+        </Button>
+      </Link>
+    </>
+  ) : (
+    <>
+      <Link href="/profile">
+        <Button
+          variant="ghost"
+          className="bg-white text-black font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none"
+        >
+          Profile ({session.role})
+        </Button>
+      </Link>
+
+      <form action={logoutAction}>
+        <Button
+          type="submit"
+          className="bg-red-500 text-white font-bold border-2 border-black shadow-[2px_2px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all px-4 py-1.5 h-auto text-sm rounded-none"
+        >
+          Logout
+        </Button>
+      </form>
+    </>
+  )}
+</div>
 
         {/* MOBILE MENU TOGGLE PLACEHOLDER */}
         {session && (

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { EVENTS, VENUES } from "@/lib/dummyData";
+import { useRouter } from "next/navigation";
+import { EVENTS, VENUES, getTicketCategoriesByEventId } from "@/lib/dummyData";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { Input } from "@/components/retroui/Input";
@@ -27,14 +28,12 @@ const hydratedEvents: EventData[] = EVENTS.map((event, index) => {
   return {
     ...event,
     artists: isOdd ? ["Tulus", "Maliq & D'Essentials"] : ["Noah", "Dewa 19", "Raisa"],
-    ticket_categories: [
-      { id: "t1", name: "Festival", price: 150000 + index * 50000, capacity: 1000 },
-      { id: "t2", name: "VIP", price: 500000 + index * 100000, capacity: 200 },
-    ],
+    ticket_categories: getTicketCategoriesByEventId(event.event_id),
   };
 });
 
 export default function EventsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [venueFilter, setVenueFilter] = useState("ALL");
   const [artistFilter, setArtistFilter] = useState("ALL");
@@ -203,7 +202,10 @@ export default function EventsPage() {
                                 <span className="font-bold text-sm">Harga Mulai:</span>
                                 <span className="font-black text-lg font-head">{formatRupiah(getStartingPrice(event.ticket_categories))}</span>
                              </div>
-                             <Button className="w-full font-black text-lg py-6 uppercase tracking-wider">
+                             <Button
+                               className="w-full font-black text-lg py-6 uppercase tracking-wider"
+                               onClick={() => router.push(`/checkout?eventId=${event.event_id}`)}
+                             >
                                 <Ticket className="w-5 h-5 mr-2" />
                                 Beli Tiket
                              </Button>
