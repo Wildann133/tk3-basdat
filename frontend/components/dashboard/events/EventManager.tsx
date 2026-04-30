@@ -193,7 +193,7 @@ export default function EventManager({ role, userId }: { role: string; userId?: 
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 mt-15">
       {/* Header and Add Button */}
       <div className="bg-primary text-black p-6 md:p-8 rounded-xl border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
@@ -214,23 +214,12 @@ export default function EventManager({ role, userId }: { role: string; userId?: 
 
           return (
             <Card key={evt.event_id} className="bg-white border-4 border-black shadow-[4px_4px_0_0_#000] flex flex-col hover:bg-accent transition-colors group overflow-hidden">
-              <div className="h-32 bg-zinc-200 border-b-4 border-black relative">
-                {evt.image_url ? (
-                  <img src={evt.image_url} alt={evt.event_title} className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-zinc-400">
-                    <span className="font-bold tracking-widest uppercase text-sm">No Image</span>
-                  </div>
-                )}
-                <div className="absolute top-2 left-2 bg-black text-white text-xs font-bold px-2 py-1 uppercase tracking-widest border-2 border-black rounded shadow-[2px_2px_0_0_#000]">
-                  {evt.status}
-                </div>
-              </div>
+              
               <CardContent className="p-6 h-full flex flex-col">
                 <div className="flex justify-between items-start mb-2">
                   <h2 className="text-2xl font-head font-bold leading-tight group-hover:text-primary transition-colors flex-1">{evt.event_title}</h2>
                   <div className="flex gap-2 ml-2">
-                    <button onClick={() => openEditModal(evt)} className="p-2 bg-secondary text-black border-2 border-black shadow-[2px_2px_0_0_#000] hover:-translate-y-1 transition-transform" title="Edit">
+                    <button onClick={() => openEditModal(evt)} className="p-2 bg-[#ffdb33] text-black border-2 border-black shadow-[2px_2px_0_0_#000] hover:-translate-y-1 transition-transform" title="Edit">
                       <Edit size={16} />
                     </button>
                     <button onClick={() => openDeleteModal(evt.event_id)} className="p-2 bg-destructive text-white border-2 border-black shadow-[2px_2px_0_0_#000] hover:-translate-y-1 transition-transform" title="Hapus">
@@ -259,7 +248,7 @@ export default function EventManager({ role, userId }: { role: string; userId?: 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-8 bg-black/50 backdrop-blur-sm">
           <Card className="w-full max-w-4xl bg-white border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col max-h-full overflow-hidden">
-            <div className="flex justify-between items-center p-6 border-b-4 border-black bg-secondary shrink-0">
+            <div className="flex justify-between items-center p-6 border-b-4 border-black bg-[#ffdb33] shrink-0">
               <h2 className="text-3xl font-head font-black">{editingEvent ? "Update Acara" : "Buat Acara Baru"}</h2>
               <button onClick={closeModal} className="p-2 bg-white border-2 border-black shadow-[2px_2px_0_0_#000] hover:bg-destructive hover:text-white transition-colors">
                 <X size={20} />

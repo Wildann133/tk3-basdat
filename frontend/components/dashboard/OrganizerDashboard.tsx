@@ -7,7 +7,7 @@ export default function OrganizerDashboard() {
   const activeEventsList = EVENTS.filter(e => e.organizer_id === "o1");
 
   return (
-    <div className="flex-1 p-4 md:p-8 min-h-full">
+    <div className="flex-1 p-4 md:p-8 min-h-full mt-15">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-min">
         
         {/* HEADER: BENTO BLOCK */}
