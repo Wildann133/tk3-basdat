@@ -54,7 +54,6 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
             <path strokeLinecap="round" strokeLinejoin="round"
               d="M21 21l-4.35-4.35M11 19A8 8 0 1 1 11 3a8 8 0 0 1 0 16z" />
           </svg>
-
           <input
             placeholder="Cari kategori..."
             className="w-full pl-9 pr-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black placeholder:text-gray-400 outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
@@ -67,7 +66,6 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
           <span className="font-head text-[0.65rem] tracking-[0.08em] uppercase bg-[#ffdb33] border-2 border-black shadow-[2px_2px_0_0_#000] px-3 py-1.5">
             {filtered.length} kategori
           </span>
-
           {canManage && <TicketCategoryForm onSave={handleSave} />}
         </div>
       </div>
@@ -77,36 +75,27 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
         <table className="w-full text-sm border-collapse">
           <thead>
             <tr className="bg-black">
-              <th className="px-5 py-3 text-left font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">
-                Kategori
-              </th>
-              <th className="px-5 py-3 text-center font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">
-                Quota
-              </th>
-              <th className="px-5 py-3 text-left font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">
-                Harga
-              </th>
-              <th className="px-5 py-3 text-left font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">
-                Event
-              </th>
-
+              <th className="px-5 py-3 text-left font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">Kategori</th>
+              <th className="px-5 py-3 text-center font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">Quota</th>
+              <th className="px-5 py-3 text-left font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">Harga</th>
+              <th className="px-5 py-3 text-left font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33]">Event</th>
               {canManage && (
-                <th className="px-5 py-3 text-center font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33] w-44">
-                  Aksi
-                </th>
+                <th className="px-5 py-3 text-center font-head text-[0.6rem] tracking-[0.15em] uppercase text-[#ffdb33] w-44">Aksi</th>
               )}
             </tr>
           </thead>
 
           <tbody>
-            {filtered.map((cat) => (
+            {filtered.map((cat, i) => (
               <tr
                 key={cat.id}
-                className="border-b-2 border-black bg-white hover:bg-[#ffdb33] transition-colors duration-100 group"
+                className={`border-b-2 border-black transition-colors duration-100 group ${
+                  i % 2 === 0 ? "bg-white" : "bg-[#f9f6ef]"
+                } hover:bg-[#fff9d6]`}
               >
                 <td className="px-5 py-3.5">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 border-2 border-black bg-[#ffdb33] group-hover:bg-white flex items-center justify-center font-head text-sm text-black shadow-[2px_2px_0_0_#000]">
+                    <div className="w-8 h-8 border-2 border-black bg-[#ffdb33] group-hover:bg-white flex items-center justify-center font-head text-sm text-black shadow-[2px_2px_0_0_#000] shrink-0">
                       {cat.name.charAt(0).toUpperCase()}
                     </div>
                     <span className="font-semibold text-black">{cat.name}</span>
@@ -114,7 +103,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
                 </td>
 
                 <td className="px-5 py-3.5 text-center">
-                  <span className="font-head text-[0.6rem] uppercase bg-[#ffdb33] border-2 border-black px-2.5 py-1">
+                  <span className="font-head text-[0.6rem] uppercase bg-[#ffdb33] border-2 border-black px-2.5 py-1 group-hover:bg-white transition-colors duration-100">
                     {cat.quota.toLocaleString()}
                   </span>
                 </td>
@@ -124,7 +113,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
                 </td>
 
                 <td className="px-5 py-3.5">
-                  <span className="font-head text-[0.6rem] uppercase bg-[#ffdb33] border-2 border-black px-2.5 py-1">
+                  <span className="font-head text-[0.6rem] uppercase bg-[#ffdb33] border-2 border-black px-2.5 py-1 group-hover:bg-white transition-colors duration-100">
                     {cat.event}
                   </span>
                 </td>
@@ -133,10 +122,9 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-center gap-2">
                       <TicketCategoryForm category={cat} onSave={handleSave} />
-
                       <button
                         onClick={() => setDeleteId(cat.id)}
-                        className="font-head text-[0.72rem] px-3 py-1.5 border-2 border-[#e63946] bg-white text-[#e63946] shadow-[2px_2px_0_0_#e63946] hover:bg-[#e63946] hover:text-white"
+                        className="font-head text-[0.72rem] px-3 py-1.5 border-2 border-black bg-white text-black shadow-[2px_2px_0_0_#000] hover:bg-[#e63946] hover:text-white hover:translate-y-px hover:shadow-[1px_1px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
                       >
                         Hapus
                       </button>
@@ -148,8 +136,8 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
 
             {filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="py-14 text-center">
-                  Tidak ada kategori ditemukan
+                <td colSpan={canManage ? 5 : 4} className="py-14 text-center text-gray-400 font-sans text-sm">
+                  Tidak ada kategori ditemukan.
                 </td>
               </tr>
             )}
@@ -157,25 +145,61 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
         </table>
       </div>
 
-      {/* MODAL DELETE */}
+      {/* DELETE MODAL */}
       {deleteId && canManage && (
         <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 px-4">
-          <div className="bg-white border-2 border-black p-6">
-            <h2>Hapus Kategori</h2>
-            <p>{categoryToDelete?.name}</p>
+          <div
+            className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] w-full max-w-sm"
+            style={{ animation: "modalIn .18s ease" }}
+          >
+            {/* Accent bar merah */}
+            <div className="h-[5px] bg-[#e63946] border-b-2 border-black" />
 
-            <div className="flex gap-2 mt-4">
-              <button onClick={() => setDeleteId(null)}>Batal</button>
-              <button
-                onClick={() => {
-                  handleDelete(deleteId);
-                  setDeleteId(null);
-                }}
-              >
-                Ya, Hapus
-              </button>
+            <div className="p-6">
+              <h2 className="font-head text-xl text-black mb-2">
+                Hapus Kategori?
+              </h2>
+              <p className="text-sm text-gray-600 mb-1 font-sans">
+                Kamu yakin ingin menghapus kategori{" "}
+                <span className="font-bold text-black">
+                  {categoryToDelete?.name}
+                </span>{" "}
+                dari event{" "}
+                <span className="font-bold text-black">
+                  {categoryToDelete?.event}
+                </span>
+                ?
+              </p>
+              <p className="text-xs text-gray-400 font-sans mb-6">
+                Tindakan ini tidak dapat dibatalkan.
+              </p>
+
+              <div className="flex gap-2.5">
+                <button
+                  onClick={() => setDeleteId(null)}
+                  className="flex-1 py-2.5 border-2 border-black bg-white text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-gray-100 hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={() => {
+                    handleDelete(deleteId);
+                    setDeleteId(null);
+                  }}
+                  className="flex-1 py-2.5 border-2 border-black bg-[#e63946] text-white font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#c1121f] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
+                >
+                  Ya, Hapus
+                </button>
+              </div>
             </div>
           </div>
+
+          <style>{`
+            @keyframes modalIn {
+              from { opacity: 0; transform: translate(-6px, 6px); }
+              to   { opacity: 1; transform: translate(0, 0); }
+            }
+          `}</style>
         </div>
       )}
     </div>

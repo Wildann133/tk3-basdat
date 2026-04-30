@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { EVENTS, VENUES } from "@/lib/dummyData";
+import { useRouter } from "next/navigation";
+import { EVENTS, VENUES, getTicketCategoriesByEventId } from "@/lib/dummyData";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { Input } from "@/components/retroui/Input";
@@ -27,14 +28,12 @@ const hydratedEvents: EventData[] = EVENTS.map((event, index) => {
   return {
     ...event,
     artists: isOdd ? ["Tulus", "Maliq & D'Essentials"] : ["Noah", "Dewa 19", "Raisa"],
-    ticket_categories: [
-      { id: "t1", name: "Festival", price: 150000 + index * 50000, capacity: 1000 },
-      { id: "t2", name: "VIP", price: 500000 + index * 100000, capacity: 200 },
-    ],
+    ticket_categories: getTicketCategoriesByEventId(event.event_id),
   };
 });
 
 export default function EventsPage() {
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [venueFilter, setVenueFilter] = useState("ALL");
   const [artistFilter, setArtistFilter] = useState("ALL");
@@ -82,10 +81,10 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-8">
+    <div className="container mx-auto p-4 md:p-8 mt-15">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-4xl font-black font-head uppercase tracking-tighter drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">
+          <h1 className="text-4xl font-black font-head uppercase tracking-tighter">
             Jelajahi Acara
           </h1>
           <p className="font-bold text-gray-700 mt-2">
@@ -95,9 +94,9 @@ export default function EventsPage() {
       </div>
 
       {/* Filters Section */}
-      <Card className="mb-8 bg-[#b8c0ff] border-4 border-black shadow-[4px_4px_0_0_#000] p-4">
+      <Card className="bg-[#ffdb33] mb-8 border-4 border-black shadow-[4px_4px_0_0_#000] p-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="relative">
+          <div className="relative bg-white">
             <Search className="absolute left-3 top-3 w-5 h-5 text-gray-600" />
             <Input
               placeholder="Cari judul acara atau artist..."
@@ -201,9 +200,12 @@ export default function EventsPage() {
                           <div className="mt-auto pt-4 border-t-2 border-black/20 flex flex-col gap-3">
                              <div className="flex justify-between items-center">
                                 <span className="font-bold text-sm">Harga Mulai:</span>
-                                <span className="font-black text-lg font-head text-primary">{formatRupiah(getStartingPrice(event.ticket_categories))}</span>
+                                <span className="font-black text-lg font-head">{formatRupiah(getStartingPrice(event.ticket_categories))}</span>
                              </div>
-                             <Button className="w-full font-black text-lg py-6 uppercase tracking-wider">
+                             <Button
+                               className="w-full font-black text-lg py-6 uppercase tracking-wider"
+                               onClick={() => router.push(`/checkout?eventId=${event.event_id}`)}
+                             >
                                 <Ticket className="w-5 h-5 mr-2" />
                                 Beli Tiket
                              </Button>
