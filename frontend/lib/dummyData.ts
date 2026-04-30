@@ -81,6 +81,74 @@ export const PROMOTIONS = [
   { promotion_id: "p6", promo_code: "FLASH", discount_type: "NOMINAL", discount_value: 100000, start_date: "2024-06-01", end_date: "2024-06-02", usage_limit: 10 }
 ];
 
+// ─── ORDERS ─────────────────────────────────────────────────────────
+export const ORDERS = [
+  { order_id: "ord_001", customer_id: "c1", event_id: "e1", order_date: "2024-05-10", total_amount: 500000 },
+  { order_id: "ord_002", customer_id: "c1", event_id: "e2", order_date: "2024-05-12", total_amount: 150000 },
+  { order_id: "ord_003", customer_id: "c2", event_id: "e1", order_date: "2024-05-13", total_amount: 1000000 },
+  { order_id: "ord_004", customer_id: "c3", event_id: "e3", order_date: "2024-06-01", total_amount: 350000 },
+  { order_id: "ord_005", customer_id: "c4", event_id: "e4", order_date: "2024-06-20", total_amount: 750000 },
+  { order_id: "ord_006", customer_id: "c5", event_id: "e2", order_date: "2024-05-18", total_amount: 300000 },
+  { order_id: "ord_007", customer_id: "c6", event_id: "e5", order_date: "2024-08-01", total_amount: 200000 },
+  { order_id: "ord_008", customer_id: "c2", event_id: "e6", order_date: "2024-08-15", total_amount: 450000 },
+];
+
+// ─── TICKET CATEGORIES (per event) ─────────────────────────────────
+export const TICKET_CATEGORIES = [
+  { tcategory_id: "tc1", category_name: "VVIP", price: 500000, quota: 50,  used: 2,  event_id: "e1" },
+  { tcategory_id: "tc2", category_name: "VIP",  price: 350000, quota: 100, used: 5,  event_id: "e1" },
+  { tcategory_id: "tc3", category_name: "Regular", price: 150000, quota: 500, used: 12, event_id: "e1" },
+  { tcategory_id: "tc4", category_name: "General Admission", price: 150000, quota: 500, used: 1, event_id: "e2" },
+  { tcategory_id: "tc5", category_name: "VIP",  price: 300000, quota: 200, used: 3,  event_id: "e2" },
+  { tcategory_id: "tc6", category_name: "VIP",  price: 350000, quota: 100, used: 0,  event_id: "e3" },
+  { tcategory_id: "tc7", category_name: "Regular", price: 200000, quota: 300, used: 1, event_id: "e3" },
+  { tcategory_id: "tc8", category_name: "VVIP", price: 750000, quota: 30,  used: 0,  event_id: "e4" },
+  { tcategory_id: "tc9", category_name: "VIP",  price: 500000, quota: 100, used: 0,  event_id: "e4" },
+  { tcategory_id: "tc10", category_name: "Regular", price: 250000, quota: 500, used: 0, event_id: "e4" },
+  { tcategory_id: "tc11", category_name: "General Admission", price: 100000, quota: 1000, used: 0, event_id: "e5" },
+  { tcategory_id: "tc12", category_name: "VIP", price: 450000, quota: 80, used: 0, event_id: "e6" },
+  { tcategory_id: "tc13", category_name: "Regular", price: 200000, quota: 400, used: 0, event_id: "e6" },
+];
+
+// ─── SEATS (only for reserved seating venues: v1, v3, v4) ──────────
+export const SEATS = [
+  // v1 - Jakarta Convention Center
+  { seat_id: "s1",  section: "VVIP",    row: "A", number: 1, venue_id: "v1" },
+  { seat_id: "s2",  section: "VVIP",    row: "A", number: 2, venue_id: "v1" },
+  { seat_id: "s3",  section: "VVIP",    row: "A", number: 3, venue_id: "v1" },
+  { seat_id: "s4",  section: "VVIP",    row: "B", number: 1, venue_id: "v1" },
+  { seat_id: "s5",  section: "VVIP",    row: "B", number: 2, venue_id: "v1" },
+  { seat_id: "s6",  section: "VIP",     row: "A", number: 1, venue_id: "v1" },
+  { seat_id: "s7",  section: "VIP",     row: "A", number: 2, venue_id: "v1" },
+  { seat_id: "s8",  section: "Regular", row: "A", number: 1, venue_id: "v1" },
+  // v3 - Bandung Hall Center
+  { seat_id: "s9",  section: "VIP",     row: "1", number: 1, venue_id: "v3" },
+  { seat_id: "s10", section: "VIP",     row: "1", number: 2, venue_id: "v3" },
+  { seat_id: "s11", section: "VIP",     row: "2", number: 1, venue_id: "v3" },
+  { seat_id: "s12", section: "Tribune", row: "1", number: 1, venue_id: "v3" },
+  // v4 - Stadion Gelora Bung Karno
+  { seat_id: "s13", section: "VVIP",    row: "1", number: 1, venue_id: "v4" },
+  { seat_id: "s14", section: "VVIP",    row: "1", number: 2, venue_id: "v4" },
+  { seat_id: "s15", section: "VIP",     row: "1", number: 1, venue_id: "v4" },
+  { seat_id: "s16", section: "VIP",     row: "1", number: 2, venue_id: "v4" },
+  { seat_id: "s17", section: "Regular", row: "1", number: 1, venue_id: "v4" },
+];
+
+// ─── HAS_RELATIONSHIP – seat ↔ ticket assignment ───────────────────
+export const HAS_RELATIONSHIP: { ticket_id: string; seat_id: string }[] = [
+  { ticket_id: "tkt_001", seat_id: "s1" },
+  { ticket_id: "tkt_002", seat_id: "s2" },
+  { ticket_id: "tkt_004", seat_id: "s6" },
+];
+
+// ─── TICKETS ────────────────────────────────────────────────────────
+export const TICKETS = [
+  { ticket_id: "tkt_001", ticket_code: "TKTTK-A1X9Q", order_id: "ord_001", tcategory_id: "tc1", status: "Lunas",      created_at: "2024-05-10T10:00:00Z" },
+  { ticket_id: "tkt_002", ticket_code: "TKTTK-B2Y8R", order_id: "ord_001", tcategory_id: "tc1", status: "Digunakan",  created_at: "2024-05-10T10:01:00Z" },
+  { ticket_id: "tkt_003", ticket_code: "TKTTK-C3Z7S", order_id: "ord_002", tcategory_id: "tc4", status: "Lunas",      created_at: "2024-05-12T14:30:00Z" },
+  { ticket_id: "tkt_004", ticket_code: "TKTTK-D4W6T", order_id: "ord_003", tcategory_id: "tc2", status: "Dibatalkan", created_at: "2024-05-13T09:15:00Z" },
+  { ticket_id: "tkt_005", ticket_code: "TKTTK-E5V5U", order_id: "ord_004", tcategory_id: "tc7", status: "Lunas",      created_at: "2024-06-01T11:00:00Z" },
+];
 export const EVENT_TICKET_CATEGORIES: Record<
   string,
   { id: string; name: string; price: number; capacity: number }[]
