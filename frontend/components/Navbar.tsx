@@ -48,6 +48,7 @@ export default async function Navbar() {
           { href: "/orders", label: "Pesanan" },
           { href: "/events", label: "Cari Event" },
           { href: "/ticket-category", label: "Kategori Tiket" },
+          { href: "/seats", label: "Daftar Kursi" },
           { href: "/artists", label: "Artist" },
           { href: "/promotions", label: "Promosi" },
           { href: "/venues", label: "Venue" },
