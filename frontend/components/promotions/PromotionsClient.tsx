@@ -9,6 +9,7 @@ import {
   createPromotion,
   deletePromotionById,
   getAllPromotions,
+  getPromotionUsageSnapshot,
   isPromoCodeUnique,
   updatePromotionById,
 } from "@/lib/promotionStore";
@@ -22,6 +23,8 @@ const defaultFormValues: PromotionFormValues = {
   end_date: "",
   usage_limit: 1,
 };
+
+type UserRole = "admin" | "organizer" | "customer" | "guest";
 
 const formatDiscountLabel = (promotion: Promotion) => {
   if (promotion.discount_type === "PERCENTAGE") {
@@ -62,9 +65,12 @@ function validatePromotionForm(
   return null;
 }
 
-export default function PromotionsClient() {
+export default function PromotionsClient({ role }: { role: UserRole }) {
   const [promotions, setPromotions] = useState<Promotion[]>(() => getAllPromotions());
   const [searchQuery, setSearchQuery] = useState("");
+  const [discountTypeFilter, setDiscountTypeFilter] = useState<
+    "All" | "PERCENTAGE" | "NOMINAL"
+  >("All");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [promotionForUpdate, setPromotionForUpdate] = useState<Promotion | null>(null);
   const [promotionForDelete, setPromotionForDelete] = useState<Promotion | null>(null);
@@ -72,12 +78,38 @@ export default function PromotionsClient() {
   const [updateForm, setUpdateForm] = useState<PromotionFormValues>(defaultFormValues);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const isAdmin = role === "admin";
 
   const filteredPromotions = useMemo(() => {
-    return promotions.filter((promotion) =>
-      promotion.promo_code.toLowerCase().includes(searchQuery.toLowerCase())
+    return promotions.filter((promotion) => {
+      const matchesQuery = promotion.promo_code
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
+      const matchesType =
+        discountTypeFilter === "All" || promotion.discount_type === discountTypeFilter;
+      return matchesQuery && matchesType;
+    });
+  }, [promotions, searchQuery, discountTypeFilter]);
+
+  const usageByPromotionId = useMemo(() => {
+    const usageMap = new Map<string, number>();
+    getPromotionUsageSnapshot(promotions).forEach((usage) =>
+      usageMap.set(usage.promotion_id, usage.used_count)
     );
-  }, [promotions, searchQuery]);
+    return usageMap;
+  }, [promotions]);
+
+  const summary = useMemo(() => {
+    const totalPromotions = promotions.length;
+    const totalUsage = getPromotionUsageSnapshot(promotions).reduce(
+      (total, usage) => total + usage.used_count,
+      0
+    );
+    const totalPercentageTypePromotions = promotions.filter(
+      (promotion) => promotion.discount_type === "PERCENTAGE"
+    ).length;
+    return { totalPromotions, totalUsage, totalPercentageTypePromotions };
+  }, [promotions]);
 
   const refreshPromotions = () => {
     setPromotions(getAllPromotions());
@@ -98,6 +130,7 @@ export default function PromotionsClient() {
   };
 
   const openCreateModal = () => {
+    if (!isAdmin) return;
     setCreateForm(defaultFormValues);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -109,6 +142,7 @@ export default function PromotionsClient() {
   };
 
   const openUpdateModal = (promotion: Promotion) => {
+    if (!isAdmin) return;
     setPromotionForUpdate(promotion);
     setUpdateForm({
       promo_code: promotion.promo_code,
@@ -127,6 +161,7 @@ export default function PromotionsClient() {
   };
 
   const openDeleteModal = (promotion: Promotion) => {
+    if (!isAdmin) return;
     setPromotionForDelete(promotion);
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -137,6 +172,7 @@ export default function PromotionsClient() {
   };
 
   const handleCreatePromotion = () => {
+    if (!isAdmin) return;
     const validationMessage = validatePromotionForm(createForm);
     if (validationMessage) {
       setErrorMessage(validationMessage);
@@ -154,6 +190,7 @@ export default function PromotionsClient() {
   };
 
   const handleUpdatePromotion = () => {
+    if (!isAdmin) return;
     if (!promotionForUpdate) return;
 
     const validationMessage = validatePromotionForm(
@@ -180,6 +217,7 @@ export default function PromotionsClient() {
   };
 
   const handleDeletePromotion = () => {
+    if (!isAdmin) return;
     if (!promotionForDelete) return;
     const deleted = deletePromotionById(promotionForDelete.promotion_id);
     if (!deleted) {
@@ -197,15 +235,46 @@ export default function PromotionsClient() {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
         <div>
           <h1 className="text-4xl font-black font-head uppercase tracking-tighter">
-            Manajemen Promosi
+            Daftar Promosi
           </h1>
           <p className="font-bold text-gray-700 mt-2">
-            Kelola data promo yang dapat digunakan saat pembelian tiket.
+            Daftar promo yang tersedia di platform TikTakTuk.
           </p>
         </div>
-        <Button className="font-bold" onClick={openCreateModal}>
-          + Create Promo
-        </Button>
+        {isAdmin && (
+          <Button className="font-bold" onClick={openCreateModal}>
+            + Create Promo
+          </Button>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="border-4 border-black shadow-[6px_6px_0_0_#000]">
+          <CardContent className="p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              Total Promotions
+            </p>
+            <p className="text-2xl font-black font-head">{summary.totalPromotions}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-4 border-black shadow-[6px_6px_0_0_#000]">
+          <CardContent className="p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              Total Usage of All Promotions
+            </p>
+            <p className="text-2xl font-black font-head">{summary.totalUsage}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-4 border-black shadow-[6px_6px_0_0_#000]">
+          <CardContent className="p-4">
+            <p className="text-xs font-bold uppercase tracking-wider text-zinc-600">
+              Total Percentage-Type Promotions
+            </p>
+            <p className="text-2xl font-black font-head">
+              {summary.totalPercentageTypePromotions}
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       {successMessage && (
@@ -222,12 +291,27 @@ export default function PromotionsClient() {
 
       <Card className="border-4 border-black shadow-[6px_6px_0_0_#000]">
         <CardContent className="p-6 space-y-4">
-          <Input
-            value={searchQuery}
-            onChange={(event) => setSearchQuery(event.target.value)}
-            placeholder="Cari berdasarkan Promo Code..."
-            className="border-2 border-black font-bold"
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <Input
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+              placeholder="Cari berdasarkan Promo Code..."
+              className="border-2 border-black font-bold"
+            />
+            <select
+              value={discountTypeFilter}
+              onChange={(event) =>
+                setDiscountTypeFilter(
+                  event.target.value as "All" | "PERCENTAGE" | "NOMINAL"
+                )
+              }
+              className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold"
+            >
+              <option value="All">All</option>
+              <option value="PERCENTAGE">Percentage</option>
+              <option value="NOMINAL">Fixed Amount</option>
+            </select>
+          </div>
 
           <div className="overflow-x-auto">
             <table className="w-full border-2 border-black text-left">
@@ -252,17 +336,22 @@ export default function PromotionsClient() {
                     End Date
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Usage Limit
+                    Usage
                   </th>
-                  <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Action
-                  </th>
+                  {isAdmin && (
+                    <th className="p-3 text-xs font-black uppercase tracking-wider">
+                      Action
+                    </th>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredPromotions.length === 0 ? (
                   <tr>
-                    <td className="p-4 text-sm font-bold text-zinc-600" colSpan={8}>
+                    <td
+                      className="p-4 text-sm font-bold text-zinc-600"
+                      colSpan={isAdmin ? 8 : 7}
+                    >
                       Tidak ada data promosi.
                     </td>
                   </tr>
@@ -284,25 +373,30 @@ export default function PromotionsClient() {
                       </td>
                       <td className="p-3 text-sm font-bold">{promotion.start_date}</td>
                       <td className="p-3 text-sm font-bold">{promotion.end_date}</td>
-                      <td className="p-3 text-sm font-bold">{promotion.usage_limit}</td>
                       <td className="p-3 text-sm font-bold">
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            className="h-9 px-3 font-bold"
-                            onClick={() => openUpdateModal(promotion)}
-                          >
-                            Update
-                          </Button>
-                          <Button
-                            type="button"
-                            className="h-9 px-3 font-bold bg-red-500 hover:bg-red-600"
-                            onClick={() => openDeleteModal(promotion)}
-                          >
-                            Delete
-                          </Button>
-                        </div>
+                        {usageByPromotionId.get(promotion.promotion_id) ?? 0}/
+                        {promotion.usage_limit}
                       </td>
+                      {isAdmin && (
+                        <td className="p-3 text-sm font-bold">
+                          <div className="flex gap-2">
+                            <Button
+                              type="button"
+                              className="h-9 px-3 font-bold"
+                              onClick={() => openUpdateModal(promotion)}
+                            >
+                              Update
+                            </Button>
+                            <Button
+                              type="button"
+                              className="h-9 px-3 font-bold bg-red-500 hover:bg-red-600"
+                              onClick={() => openDeleteModal(promotion)}
+                            >
+                              Delete
+                            </Button>
+                          </div>
+                        </td>
+                      )}
                     </tr>
                   ))
                 )}
@@ -312,7 +406,7 @@ export default function PromotionsClient() {
         </CardContent>
       </Card>
 
-      <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+      <Dialog open={isAdmin && isCreateOpen} onOpenChange={setIsCreateOpen}>
         <Dialog.Content size="lg" className="border-4 border-black">
           <Dialog.Header className="font-black text-lg">Create Promotion</Dialog.Header>
           <div className="p-6 space-y-4">
@@ -340,7 +434,7 @@ export default function PromotionsClient() {
       </Dialog>
 
       <Dialog
-        open={Boolean(promotionForUpdate)}
+        open={isAdmin && Boolean(promotionForUpdate)}
         onOpenChange={(isOpen) => {
           if (!isOpen) closeUpdateModal();
         }}
@@ -372,7 +466,7 @@ export default function PromotionsClient() {
       </Dialog>
 
       <Dialog
-        open={Boolean(promotionForDelete)}
+        open={isAdmin && Boolean(promotionForDelete)}
         onOpenChange={(isOpen) => {
           if (!isOpen) closeDeleteModal();
         }}

@@ -1,5 +1,6 @@
 import { PROMOTIONS } from "@/lib/dummyData";
 import { Promotion, PromotionFormValues } from "@/lib/types/promotion";
+import { getAllOrders } from "@/lib/orderStore";
 
 const globalPromotionState = globalThis as typeof globalThis & {
   __tiktaktukPromotions?: Promotion[];
@@ -64,4 +65,22 @@ export function deletePromotionById(promotionId: string) {
   if (index < 0) return false;
   currentStore.splice(index, 1);
   return true;
+}
+
+export function getPromotionUsedCount(promoCode: string) {
+  const normalized = promoCode.trim().toLowerCase();
+  if (!normalized) return 0;
+  return getAllOrders().reduce((total, order) => {
+    if (!order.promo_code) return total;
+    if (order.promo_code.trim().toLowerCase() !== normalized) return total;
+    return total + order.quantity;
+  }, 0);
+}
+
+export function getPromotionUsageSnapshot(promotions: Promotion[]) {
+  return promotions.map((promotion) => ({
+    promotion_id: promotion.promotion_id,
+    used_count: getPromotionUsedCount(promotion.promo_code),
+    usage_limit: promotion.usage_limit,
+  }));
 }

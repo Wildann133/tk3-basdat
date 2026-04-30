@@ -36,6 +36,7 @@ export default async function Navbar() {
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Manajemen Tiket</Link>
             <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors"> Artis</Link>
             <Link href="/orders" className="text-sm font-bold hover:text-primary transition-colors">Semua Order</Link>
+            <Link href="/promotions" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket (Aset)</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Order (Aset)</Link>
           </>
@@ -49,7 +50,7 @@ export default async function Navbar() {
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Tiket Saya</Link>
             <Link href="/orders" className="text-sm font-bold hover:text-primary transition-colors">Pesanan</Link>
             <Link href="/events" className="text-sm font-bold hover:text-primary transition-colors">Cari Event</Link>
-            <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
+            <Link href="/promotions" className="text-sm font-bold hover:text-primary transition-colors">Promosi</Link>
             <Link href="#" className="text-sm font-bold hover:text-primary transition-colors">Venue</Link>
             <Link href="/ticket-category" className="text-sm font-bold hover:text-primary transition-colors"> Kategori Tiket</Link>
             <Link href="/artists" className="text-sm font-bold hover:text-primary transition-colors">Artis</Link>
@@ -76,6 +77,11 @@ export default async function Navbar() {
       <div className="flex items-center space-x-4">
         {!session ? (
           <>
+            <Link href="/promotions">
+              <Button variant="ghost" className="font-bold border-2 border-transparent">
+                Promosi
+              </Button>
+            </Link>
             <Link href="/login">
               <Button variant="ghost" className="font-bold border-2 border-transparent">
                 Log in
