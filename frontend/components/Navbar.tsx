@@ -19,19 +19,19 @@ export default async function Navbar() {
           { href: "#", label: "Manajemen Kursi" },
           { href: "/ticket-category", label: "Manajemen Kategori Tiket" },
           { href: "/artists", label: "Manajemen Artist" },
-          { href: "#", label: "Manajemen Tiket" },
+          { href: "/manage-tickets", label: "Manajemen Tiket" },
           { href: "/promotions", label: "Promosi" },
           { href: "/orders", label: "Semua Order" },
-          { href: "/tickets", label: "Tiket (Aset)" },
+          { href: "#", label: "Tiket (Aset)" },
           { href: "#", label: "Order (Aset)" },
         ];
         break;
       case "organizer":
         menus = [
           { href: "/dashboard", label: "Dashboard" },
-          { href: "/my-events", label: "Event Saya" },
-          { href: "/manage-venue", label: "Manajemen Venue" },
-          { href: "/manage-seats", label: "Manajemen Kursi" },
+          { href: "#", label: "Event Saya" },
+          { href: "#", label: "Manajemen Venue" },
+          { href: "#", label: "Manajemen Kursi" },
           { href: "/ticket-category", label: "Manajemen Kategori Tiket" },
           { href: "/artists", label: "Artist" },
           { href: "#", label: "Manajemen Tiket" },
@@ -44,14 +44,13 @@ export default async function Navbar() {
       default:
         menus = [
           { href: "/dashboard", label: "Dashboard" },
-          { href: "#", label: "Tiket Saya" },
+          { href: "/my-tickets", label: "Tiket Saya" },
           { href: "/orders", label: "Pesanan" },
           { href: "/events", label: "Cari Event" },
           { href: "/ticket-category", label: "Kategori Tiket" },
           { href: "/artists", label: "Artist" },
           { href: "/promotions", label: "Promosi" },
-          { href: "#", label: "Venue" },
-          { href: "#", label: "Artis" },
+          { href: "/venues", label: "Venue" },
         ];
         break;
     }
