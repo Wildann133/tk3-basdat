@@ -81,7 +81,7 @@ export default function EventsPage() {
   };
 
   return (
-    <div className="container mx-auto p-4 md:p-8 mt-15">
+    <div className="container mx-auto p-4 md:p-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
           <h1 className="text-4xl font-black font-head uppercase tracking-tighter">

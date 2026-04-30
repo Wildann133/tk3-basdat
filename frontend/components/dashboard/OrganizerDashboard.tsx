@@ -2,12 +2,13 @@ import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { CalendarCheck, Ticket, TrendingUp, MapPin, Plus } from "lucide-react";
 import { ORGANIZER_STATS, EVENTS } from "@/lib/dummyData";
+import Link from "next/link";
 
 export default function OrganizerDashboard() {
   const activeEventsList = EVENTS.filter(e => e.organizer_id === "o1");
 
   return (
-    <div className="flex-1 p-4 md:p-8 min-h-full mt-15">
+    <div className="flex-1 p-4 md:p-8 min-h-full">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-min">
         
         {/* HEADER: BENTO BLOCK */}
@@ -18,12 +19,16 @@ export default function OrganizerDashboard() {
             <p className="text-zinc-300 font-medium">Kelola {ORGANIZER_STATS.activeEvents} acara aktif Anda di TikTakTuk</p>
           </div>
           <div className="flex flex-wrap gap-4">
+            <Link href="/myevents">
             <Button className="bg-primary text-black hover:bg-primary-hover border-4 border-black rounded-lg shadow-[4px_4px_0_0_#000] font-bold">
               + Kelola Acara
             </Button>
+            </Link>
+            <Link href="/venues">
             <Button className="bg-white text-black hover:bg-zinc-200 border-4 border-black rounded-lg shadow-[4px_4px_0_0_#000] font-bold">
               Venue
             </Button>
+            </Link>
           </div>
         </div>
 
@@ -35,7 +40,7 @@ export default function OrganizerDashboard() {
                 <h2 className="text-3xl font-bold font-head uppercase tracking-tight">Performa Acara</h2>
                 <p className="text-sm font-bold text-zinc-500 mt-1">Acara yang sedang berjalan</p>
               </div>
-              <a href="#" className="bg-primary text-black px-4 py-2 border-2 border-black font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-1 hover:-translate-y-1 transition-transform">Semua &rarr;</a>
+              <a href="/myevents" className="bg-primary text-black px-4 py-2 border-2 border-black font-bold shadow-[2px_2px_0_0_#000] hover:translate-x-1 hover:-translate-y-1 transition-transform">Semua &rarr;</a>
             </div>
 
             <div className="space-y-4 flex-1">
@@ -56,7 +61,9 @@ export default function OrganizerDashboard() {
                     </div>
                   </div>
                   <div className="mt-4 md:mt-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Link href="/myevents">
                     <Button variant="outline" size="sm" className="bg-black text-white hover:bg-zinc-800">Detail</Button>
+                    </Link>
                   </div>
                 </div>
               ))}

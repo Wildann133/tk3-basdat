@@ -193,7 +193,7 @@ export default function EventManager({ role, userId }: { role: string; userId?: 
   };
 
   return (
-    <div className="space-y-6 mt-15">
+    <div className="space-y-6">
       {/* Header and Add Button */}
       <div className="bg-primary text-black p-6 md:p-8 rounded-xl border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>

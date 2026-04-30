@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { USERS, ACCOUNT_ROLES, ROLES } from "./dummyData";
 
 // Define dummy USERS locally since we need it for auth, if it's not exported in dummyData we can mock it here
@@ -67,4 +68,5 @@ if (roleObj) {
 export async function logoutAction() {
   const cookieStore = await cookies();
   cookieStore.delete("tiktaktuk_session");
+  redirect("/");
 }

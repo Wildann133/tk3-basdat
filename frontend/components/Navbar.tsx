@@ -81,8 +81,8 @@ export default async function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b-2 border-black">
-      <div className="mx-auto w-full max-w-[1400px] px-4 md:px-8 py-3">
+    <header className="fixed top-0 z-50 w-full pointer-events-none">
+      <div className="mx-auto w-full max-w-[1400px] px-4 md:px-8 py-3 pointer-events-auto">
       <nav className="border-2 border-black bg-[#fdfdfc] flex items-center justify-between px-4 py-2 w-full shadow-[4px_4px_0_0_#000] gap-4">
         <div className="flex items-center gap-6">
           <Link href="/">
