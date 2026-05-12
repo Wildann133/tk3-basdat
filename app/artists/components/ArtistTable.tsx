@@ -1,38 +1,81 @@
 "use client";
 
-import { useState } from "react";
-import { initialArtists } from "@/lib/dummyData";
+import { useState, useEffect } from "react";
 import ArtistForm from "./ArtistForm";
 
 export default function ArtistTable({ role }: { role?: string }) {
   const isAdmin = role === "admin";
 
-  const [artists, setArtists] = useState(initialArtists);
+  const [artists, setArtists] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleDelete = (id: string) => {
-    setArtists(artists.filter((a) => a.id !== id));
+  // Ambil data dari API saat pertama kali load
+  useEffect(() => {
+    const fetchArtists = async () => {
+      try {
+        const res = await fetch('/api/artists');
+        const data = await res.json();
+        setArtists(data);
+      } catch (error) {
+        console.error("Gagal memuat artis:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchArtists();
+  }, []);
+
+  const handleDelete = async (id: string) => {
+    try {
+      const res = await fetch(`/api/artists?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setArtists(artists.filter((a) => a.id !== id));
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    } catch (error) {
+      console.error("Gagal hapus:", error);
+    }
   };
 
-  const handleSave = (artist: any) => {
-    const exist = artists.find((a) => a.id === artist.id);
-    if (exist) {
-      setArtists(artists.map((a) => (a.id === artist.id ? artist : a)));
-    } else {
-      setArtists([...artists, artist]);
+  const handleSave = async (artistPayload: any) => {
+    const isEdit = !!artistPayload.id;
+    const method = isEdit ? 'PUT' : 'POST';
+
+    try {
+      const res = await fetch('/api/artists', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(artistPayload),
+      });
+
+      if (res.ok) {
+        const savedArtist = await res.json();
+        if (isEdit) {
+          setArtists(artists.map((a) => (a.id === savedArtist.id ? savedArtist : a)));
+        } else {
+          setArtists([...artists, savedArtist]);
+        }
+      } else {
+        const err = await res.json();
+        alert(err.error);
+      }
+    } catch (error) {
+      console.error("Gagal simpan:", error);
     }
   };
 
   const filteredArtists = artists
-    .filter((a) => a.name.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => a.name.localeCompare(b.name));
+    .filter((a) => a.name?.toLowerCase().includes(search.toLowerCase()))
+    .sort((a, b) => a.name?.localeCompare(b.name));
 
   const artistToDelete = artists.find((a) => a.id === deleteId);
 
   return (
     <div>
-      {/* TOOLBAR */}
       <div className="flex justify-between mb-5 flex-wrap gap-4">
         <input
           placeholder="Cari artist..."
@@ -43,54 +86,28 @@ export default function ArtistTable({ role }: { role?: string }) {
         {isAdmin && <ArtistForm onSave={handleSave} />}
       </div>
 
-      {/* TABLE */}
       <table className="w-full border-2 border-black">
         <thead className="bg-black text-[#ffdb33]">
           <tr>
             <th className="p-3 text-left font-head tracking-wide">Nama</th>
             <th className="p-3 text-left font-head tracking-wide">Genre</th>
-            {isAdmin && (
-              <th className="p-3 text-center font-head tracking-wide">Aksi</th>
-            )}
+            {isAdmin && <th className="p-3 text-center font-head tracking-wide">Aksi</th>}
           </tr>
         </thead>
-
         <tbody>
-          {filteredArtists.length === 0 ? (
-            <tr>
-              <td
-                colSpan={isAdmin ? 3 : 2}
-                className="p-6 text-center text-gray-400 font-sans text-sm"
-              >
-                Tidak ada artist ditemukan.
-              </td>
-            </tr>
+          {isLoading ? (
+            <tr><td colSpan={isAdmin ? 3 : 2} className="p-10 text-center text-gray-500">Menghubungkan ke Neon Database...</td></tr>
+          ) : filteredArtists.length === 0 ? (
+            <tr><td colSpan={isAdmin ? 3 : 2} className="p-6 text-center text-gray-400">Tidak ada artis.</td></tr>
           ) : (
             filteredArtists.map((artist, i) => (
-              <tr
-                key={artist.id}
-                className={`border-t-2 border-black transition-colors duration-100 ${
-                  i % 2 === 0 ? "bg-white" : "bg-[#f9f6ef]"
-                } hover:bg-[#fff9d6]`}
-              >
-                <td className="p-3 font-sans text-sm font-semibold text-black">
-                  {artist.name}
-                </td>
-                <td className="p-3 font-sans text-sm text-gray-600">
-                  {artist.genre || (
-                    <span className="italic text-gray-300">—</span>
-                  )}
-                </td>
-
+              <tr key={artist.id} className={`border-t-2 border-black transition-colors ${i % 2 === 0 ? "bg-white" : "bg-[#f9f6ef]"} hover:bg-[#fff9d6]`}>
+                <td className="p-3 font-sans text-sm font-semibold text-black">{artist.name}</td>
+                <td className="p-3 font-sans text-sm text-gray-600">{artist.genre || <span className="italic text-gray-300">—</span>}</td>
                 {isAdmin && (
                   <td className="p-3 text-center space-x-2">
                     <ArtistForm artist={artist} onSave={handleSave} />
-                    <button
-                      onClick={() => setDeleteId(artist.id)}
-                      className="font-head text-xs px-3 py-1.5 border-2 border-black bg-white text-black shadow-[2px_2px_0_0_#000] hover:bg-[#e63946] hover:text-white hover:translate-y-px hover:shadow-[1px_1px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
-                    >
-                      Hapus
-                    </button>
+                    <button onClick={() => setDeleteId(artist.id)} className="font-head text-xs px-3 py-1.5 border-2 border-black bg-white text-black shadow-[2px_2px_0_0_#000] hover:bg-[#e63946] hover:text-white transition-all cursor-pointer">Hapus</button>
                   </td>
                 )}
               </tr>
@@ -99,54 +116,19 @@ export default function ArtistTable({ role }: { role?: string }) {
         </tbody>
       </table>
 
-      {/* DELETE MODAL */}
-      {deleteId && isAdmin && (
+      {deleteId && (
         <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 px-4">
-          <div
-            className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] w-full max-w-sm"
-            style={{ animation: "modalIn .18s ease" }}
-          >
-            {/* Top accent bar — merah untuk danger */}
+          <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] w-full max-w-sm">
             <div className="h-[5px] bg-[#e63946] border-b-2 border-black" />
-
             <div className="p-6">
-              <h2 className="font-head text-xl text-black mb-2">
-                Hapus Artist?
-              </h2>
-              <p className="text-sm text-gray-600 mb-6 font-sans">
-                Kamu yakin ingin menghapus{" "}
-                <span className="font-bold text-black">
-                  {artistToDelete?.name}
-                </span>
-                ? Tindakan ini tidak bisa dibatalkan.
-              </p>
-
+              <h2 className="font-head text-xl text-black mb-2">Hapus Artist?</h2>
+              <p className="text-sm text-gray-600 mb-6">Yakin ingin menghapus <span className="font-bold">{artistToDelete?.name}</span>?</p>
               <div className="flex gap-2.5">
-                <button
-                  onClick={() => setDeleteId(null)}
-                  className="flex-1 py-2.5 border-2 border-black bg-white text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-gray-100 hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
-                >
-                  Batal
-                </button>
-                <button
-                  onClick={() => {
-                    handleDelete(deleteId);
-                    setDeleteId(null);
-                  }}
-                  className="flex-1 py-2.5 border-2 border-black bg-[#e63946] text-white font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#c1121f] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
-                >
-                  Ya, Hapus
-                </button>
+                <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border-2 border-black bg-white text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-gray-100 transition-all cursor-pointer">Batal</button>
+                <button onClick={() => { handleDelete(deleteId); setDeleteId(null); }} className="flex-1 py-2.5 border-2 border-black bg-[#e63946] text-white font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#c1121f] transition-all cursor-pointer">Ya, Hapus</button>
               </div>
             </div>
           </div>
-
-          <style>{`
-            @keyframes modalIn {
-              from { opacity: 0; transform: translate(-6px, 6px); }
-              to   { opacity: 1; transform: translate(0, 0); }
-            }
-          `}</style>
         </div>
       )}
     </div>

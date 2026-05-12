@@ -1,33 +1,40 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
+/**
+ * Next.js 16+ Proxy 
+ * Menggantikan konvensi middleware lama.
+ */
+export function proxy(request: NextRequest) {
   const session = request.cookies.get('tiktaktuk_session');
   const { pathname } = request.nextUrl;
 
-  // Define public paths that can be accessed without logging in
+  // 1. Tentukan path publik yang bisa diakses tanpa login
   const isPublicPath = 
     pathname === '/' ||
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||
     pathname.startsWith('/promotions');
 
-  // If the user is NOT logged in and tries to access a protected path
+  // 2. Jika user BELUM login dan mencoba akses path terproteksi
   if (!session && !isPublicPath) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  // If the user IS logged in and tries to access login/register, 
-  // we could redirect them to dashboard, but keeping it simple for now as per request.
+  // 3. (Opsional) Jika user SUDAH login dan mencoba akses login/register, 
+  // kita biarkan saja sesuai permintaanmu agar tetap simpel.
 
   return NextResponse.next();
 }
 
-// Match all paths except static files and API routes
+/**
+ * Konfigurasi matcher untuk menentukan rute mana saja 
+ * yang akan diproses oleh fungsi proxy di atas.
+ */
 export const config = {
   matcher: [
     /*
-     * Match all request paths except for the ones starting with:
+     * Match semua path kecuali:
      * - api (API routes)
      * - _next/static (static files)
      * - _next/image (image optimization files)

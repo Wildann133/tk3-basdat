@@ -2,9 +2,8 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { USERS, ACCOUNT_ROLES, ROLES } from "./dummyData";
+import { query } from "./db";
 
-// Define dummy USERS locally since we need it for auth, if it's not exported in dummyData we can mock it here
 export async function getSession() {
   const cookieStore = await cookies();
   const sessionData = cookieStore.get("tiktaktuk_session")?.value;
@@ -25,44 +24,63 @@ export async function loginAction(formData: FormData) {
     return { error: "Semua form wajib diisi." };
   }
 
-  // 1. Cek kecocokan kredensial dengan array USERS di dummy data
-  const user = USERS.find(u => u.username === username && u.password === password);
-  if (!user) {
-    return { error: "Username atau password salah!" };
+  try {
+    // 1. Cari user
+    const userResult = await query(
+      'SELECT user_id, username FROM USER_ACCOUNT WHERE username = $1 AND password = $2',
+      [username, password]
+    );
+
+    const user = userResult.rows[0];
+
+    if (!user) {
+      return { error: "Username atau password salah!" };
+    }
+
+    // 2. Cari Role
+    const roleResult = await query(
+      `SELECT r.role_name 
+       FROM ACCOUNT_ROLE ar 
+       JOIN ROLE r ON ar.role_id = r.role_id 
+       WHERE ar.user_id = $1`,
+      [user.user_id]
+    );
+
+    const roleObj = roleResult.rows[0]; // ✅ [0] bukan langsung .rows
+    let role = "customer";
+
+    if (roleObj) {
+      const name = roleObj.role_name.toLowerCase();
+      if (name === "administrator") role = "admin";
+      else if (name === "organizer") role = "organizer";
+      else role = "customer";
+    }
+
+    // 3. Simpan Session
+    const payload = {
+      user_id: user.user_id,
+      username: user.username,
+      role,
+      loggedInAt: new Date().toISOString()
+    };
+
+    const cookieStore = await cookies();
+    cookieStore.set("tiktaktuk_session", JSON.stringify(payload), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/"
+    });
+
+    return { success: true };
+
+  } catch (error: any) {
+    console.error("Auth Error:", error);
+    if (error.message?.includes('timeout') || error.code === 'ECONNRESET') {
+      return { error: "Database sedang bersiap. Tunggu 5 detik lalu klik Login lagi." };
+    }
+    return { error: "Terjadi kesalahan pada koneksi database." };
   }
-
-  // 2. Cari Role dari user tersebut melalui tabel relasi
-  const accountRole = ACCOUNT_ROLES.find(ar => ar.user_id === user.user_id);
-  const roleObj = ROLES.find(r => r.role_id === accountRole?.role_id);
-  
-  // Ambil role_name (Administrator, Organizer, Customer) lalu kecilkan semua hurufnya
-  let role = "customer";
-
-if (roleObj) {
-  const name = roleObj.role_name.toLowerCase();
-
-  if (name === "administrator") role = "admin";
-  else if (name === "organizer") role = "organizer";
-  else role = "customer";
-}
-
-  // Set the session payload into a cookie
-  const payload = {
-    user_id: user.user_id,
-    username: user.username,
-    role,
-    loggedInAt: new Date().toISOString()
-  };
-
-  const cookieStore = await cookies();
-  cookieStore.set("tiktaktuk_session", JSON.stringify(payload), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
-    path: "/"
-  });
-
-  return { success: true };
 }
 
 export async function logoutAction() {
