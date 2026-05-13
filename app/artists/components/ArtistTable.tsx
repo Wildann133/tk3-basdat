@@ -22,11 +22,11 @@ export default function ArtistTable({ role }: { role?: string }) {
     }, 3000);
   };
 
-  // Ambil data dari API saat pertama kali load
+  // Ambil data dari API saat pertama kali load (Ditambah no-store anti-cache)
   useEffect(() => {
     const fetchArtists = async () => {
       try {
-        const res = await fetch('/api/artists');
+        const res = await fetch('/api/artists', { cache: 'no-store' });
         const data = await res.json();
         setArtists(data);
       } catch (error) {

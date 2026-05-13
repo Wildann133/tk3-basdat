@@ -23,9 +23,9 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
     }, 3000);
   };
 
-  // Ambil data dari API
+  // Ambil data dari API (Ditambah no-store agar mematikan cache browser)
   useEffect(() => {
-    fetch('/api/ticket-categories')
+    fetch('/api/ticket-categories', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setCategories(data);
@@ -48,8 +48,8 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
       });
 
       if (res.ok) {
-        // Refresh data agar JOIN event_name terupdate dari server
-        const refresh = await fetch('/api/ticket-categories');
+        // Refresh data agar JOIN event_name terupdate dari server (Anti-Cache)
+        const refresh = await fetch('/api/ticket-categories', { cache: 'no-store' });
         const newData = await refresh.json();
         setCategories(newData);
         showNotification("success", isEdit ? "Kategori tiket berhasil diupdate!" : "Kategori baru berhasil ditambahkan!");
@@ -148,14 +148,21 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
         </table>
       </div>
 
+      {/* MODAL KONFIRMASI DELETE */}
       {deleteId && (
         <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 px-4">
-          <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] p-6 max-w-sm">
-            <h2 className="font-head text-xl mb-2">Hapus Kategori?</h2>
-            <p className="text-sm mb-6 text-gray-600">Yakin ingin menghapus kategori <span className="font-bold">{categoryToDelete?.name}</span>?</p>
+          <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] p-6 max-w-sm w-full">
+            <h2 className="font-head text-xl mb-2 text-black">Hapus Kategori?</h2>
+            <div className="text-sm mb-6 text-gray-600 bg-gray-50 p-3 border-2 border-dashed border-gray-300">
+              <p>Yakin ingin menghapus kategori ini?</p>
+              <div className="mt-2">
+                <span className="block font-bold text-black">{categoryToDelete?.name}</span>
+                <span className="block font-mono text-xs mt-1">ID: {categoryToDelete?.id}</span>
+              </div>
+            </div>
             <div className="flex gap-2">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2 border-2 border-black bg-white cursor-pointer hover:bg-gray-100 transition-all">Batal</button>
-              <button onClick={() => { handleDelete(deleteId); setDeleteId(null); }} className="flex-1 py-2 border-2 border-black bg-[#e63946] text-white cursor-pointer hover:bg-[#c1121f] transition-all">Ya, Hapus</button>
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2 font-head text-xs border-2 border-black bg-white cursor-pointer hover:bg-gray-100 transition-all shadow-[3px_3px_0_0_#000]">Batal</button>
+              <button onClick={() => { handleDelete(deleteId); setDeleteId(null); }} className="flex-1 py-2 font-head text-xs border-2 border-black bg-[#e63946] text-white cursor-pointer hover:bg-[#c1121f] transition-all shadow-[3px_3px_0_0_#000]">Ya, Hapus</button>
             </div>
           </div>
         </div>
