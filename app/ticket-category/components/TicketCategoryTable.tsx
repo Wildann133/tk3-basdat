@@ -90,9 +90,9 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
       {/* TOAST NOTIFICATION UI */}
       {notification && (
         <div 
-          className={`fixed top-6 right-6 z- px-5 py-3 border-4 border-black font-head tracking-wide text-sm shadow-[6px_6px_0_0_#000] transition-all animate-bounce ${
-            notification.type === "success" ? "bg-[#a7c957] text-black" : "bg-[#e63946] text-white"
-          }`}
+        className={`fixed bottom-8 right-8 z- px-5 py-3 border-4 border-black font-head tracking-wide text-sm shadow-[6px_6px_0_0_#000] transition-all animate-bounce ${
+          notification.type === "success" ? "bg-[#a7c957] text-black" : "bg-[#e63946] text-white"
+        }`}
         >
           {notification.type === "success" ? "✅ " : "⚠️ "} 
           {notification.message}
