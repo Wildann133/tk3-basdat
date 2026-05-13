@@ -81,7 +81,7 @@ export default function ArtistTable({ role }: { role?: string }) {
           placeholder="Cari artist..."
           className="border-2 border-black px-3 py-2 bg-white text-black font-sans text-sm outline-none focus:shadow-[3px_3px_0_0_#000] focus:bg-[#ffdb33] transition-all duration-150"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
         />
         {isAdmin && <ArtistForm onSave={handleSave} />}
       </div>

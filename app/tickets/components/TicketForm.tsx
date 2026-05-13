@@ -191,7 +191,7 @@ export default function TicketForm({ onSave, existingTickets }: TicketFormProps)
                   <select
                     className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer"
                     value={selectedOrderId}
-                    onChange={(e) => handleOrderChange(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleOrderChange(e.target.value)}
                   >
                     <option value="">Pilih Order</option>
                     {orderOptions.map((opt) => (
@@ -210,7 +210,7 @@ export default function TicketForm({ onSave, existingTickets }: TicketFormProps)
                   <select
                     className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     value={selectedCategoryId}
-                    onChange={(e) => { setSelectedCategoryId(e.target.value); setError(""); }}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setSelectedCategoryId(e.target.value); setError(""); }}
                     disabled={!selectedOrderId}
                   >
                     <option value="">
@@ -233,7 +233,7 @@ export default function TicketForm({ onSave, existingTickets }: TicketFormProps)
                     <select
                       className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer"
                       value={selectedSeatId}
-                      onChange={(e) => setSelectedSeatId(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedSeatId(e.target.value)}
                     >
                       <option value="">Tanpa kursi</option>
                       {seatOptions.map((opt) => (

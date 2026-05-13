@@ -101,7 +101,7 @@ export default function EventsPage() {
             <Input
               placeholder="Cari judul acara atau artist..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               className="pl-10 border-2 border-black font-bold"
             />
           </div>
@@ -109,7 +109,7 @@ export default function EventsPage() {
           <div>
             <select
               value={venueFilter}
-              onChange={(e) => setVenueFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setVenueFilter(e.target.value)}
               className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold shadow-[2px_2px_0_0_#000] outline-hidden focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all cursor-pointer"
             >
               <option value="ALL">Semua Venue</option>
@@ -124,7 +124,7 @@ export default function EventsPage() {
           <div>
             <select
               value={artistFilter}
-              onChange={(e) => setArtistFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setArtistFilter(e.target.value)}
               className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold shadow-[2px_2px_0_0_#000] outline-hidden focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all cursor-pointer"
             >
               <option value="ALL">Semua Artist</option>

@@ -118,7 +118,7 @@ export default function SeatTable({ role }: { role?: string }) {
                 placeholder="Cari section, baris, atau nomor..."
                 className="w-full pl-9 pr-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black placeholder:text-gray-400 outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               />
             </div>
 
@@ -127,7 +127,7 @@ export default function SeatTable({ role }: { role?: string }) {
               <select
                 className="px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black font-sans outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer"
                 value={venueFilter}
-                onChange={(e) => setVenueFilter(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setVenueFilter(e.target.value)}
               >
                 <option value="all">Semua Venue</option>
                 {reservedVenues.map((v) => (

@@ -200,7 +200,7 @@ export default function VenueManager({ role }: { role: string }) {
           <Input
             placeholder="Cari berdasarkan nama atau alamat venue..."
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
             className="w-full border-2 border-black bg-white pl-10"
           />
         </div>
@@ -298,7 +298,7 @@ export default function VenueManager({ role }: { role: string }) {
                   <Input
                     required
                     value={formData.venue_name}
-                    onChange={(e) => setFormData({ ...formData, venue_name: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, venue_name: e.target.value })}
                     className="border-2 border-black"
                   />
                 </div>
@@ -307,7 +307,7 @@ export default function VenueManager({ role }: { role: string }) {
                   <Input
                     required
                     value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, address: e.target.value })}
                     className="border-2 border-black"
                   />
                 </div>
@@ -317,7 +317,7 @@ export default function VenueManager({ role }: { role: string }) {
                     <Input
                       required
                       value={formData.city}
-                      onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, city: e.target.value })}
                       className="border-2 border-black"
                     />
                   </div>
@@ -327,7 +327,7 @@ export default function VenueManager({ role }: { role: string }) {
                       type="number"
                       required
                       value={formData.capacity}
-                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, capacity: e.target.value })}
                       className="border-2 border-black"
                     />
                   </div>

@@ -294,13 +294,13 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(event.target.value)}
               placeholder="Cari berdasarkan Promo Code..."
               className="border-2 border-black font-bold"
             />
             <select
               value={discountTypeFilter}
-              onChange={(event) =>
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                 setDiscountTypeFilter(
                   event.target.value as "All" | "PERCENTAGE" | "NOMINAL"
                 )
@@ -536,7 +536,7 @@ function PromotionForm(props: {
         </label>
         <Input
           value={values.promo_code}
-          onChange={(event) => onChange("promo_code", event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("promo_code", event.target.value)}
           className="border-2 border-black font-bold"
         />
       </div>
@@ -547,7 +547,7 @@ function PromotionForm(props: {
           </label>
           <select
             value={values.discount_type}
-            onChange={(event) =>
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
               onChange(
                 "discount_type",
                 event.target.value as PromotionFormValues["discount_type"]
@@ -568,7 +568,7 @@ function PromotionForm(props: {
             min={1}
             step={1}
             value={Number.isNaN(values.discount_value) ? "" : values.discount_value}
-            onChange={(event) =>
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
               onChange("discount_value", Number(event.target.value))
             }
             className="border-2 border-black font-bold"
@@ -583,7 +583,7 @@ function PromotionForm(props: {
           <Input
             type="date"
             value={values.start_date}
-            onChange={(event) => onChange("start_date", event.target.value)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("start_date", event.target.value)}
             className="border-2 border-black font-bold"
           />
         </div>
@@ -594,7 +594,7 @@ function PromotionForm(props: {
           <Input
             type="date"
             value={values.end_date}
-            onChange={(event) => onChange("end_date", event.target.value)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("end_date", event.target.value)}
             className="border-2 border-black font-bold"
           />
         </div>
@@ -608,7 +608,7 @@ function PromotionForm(props: {
           min={1}
           step={1}
           value={Number.isNaN(values.usage_limit) ? "" : values.usage_limit}
-          onChange={(event) => onChange("usage_limit", Number(event.target.value))}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("usage_limit", Number(event.target.value))}
           className="border-2 border-black font-bold"
         />
       </div>

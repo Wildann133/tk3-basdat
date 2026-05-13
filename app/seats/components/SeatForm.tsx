@@ -92,7 +92,7 @@ export default function SeatForm({ seat, onSave, venues }: SeatFormProps) {
                   <select
                     className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer"
                     value={venueId}
-                    onChange={(e) => { setVenueId(e.target.value); setError(""); }}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => { setVenueId(e.target.value); setError(""); }}
                   >
                     <option value="">Pilih Venue</option>
                     {venues.map((v) => (
@@ -110,7 +110,7 @@ export default function SeatForm({ seat, onSave, venues }: SeatFormProps) {
                     className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm placeholder:text-gray-400 outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
                     placeholder="cth: VVIP, VIP, Tribune West"
                     value={section}
-                    onChange={(e) => { setSection(e.target.value); setError(""); }}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setSection(e.target.value); setError(""); }}
                   />
                 </div>
 
@@ -123,7 +123,7 @@ export default function SeatForm({ seat, onSave, venues }: SeatFormProps) {
                     className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm placeholder:text-gray-400 outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
                     placeholder="cth: A, B, C, 1, 2, 3"
                     value={row}
-                    onChange={(e) => { setRow(e.target.value); setError(""); }}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setRow(e.target.value); setError(""); }}
                   />
                 </div>
 
@@ -137,7 +137,7 @@ export default function SeatForm({ seat, onSave, venues }: SeatFormProps) {
                     min={1}
                     className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
                     value={number}
-                    onChange={(e) => { setNumber(Number(e.target.value)); setError(""); }}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setNumber(Number(e.target.value)); setError(""); }}
                   />
                 </div>
               </div>

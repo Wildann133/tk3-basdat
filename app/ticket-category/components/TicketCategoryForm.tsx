@@ -61,21 +61,21 @@ export default function TicketCategoryForm({ category, onSave }: any) {
               <div className="space-y-4">
                 <div>
                   <label className="font-head text-[0.6rem] uppercase block mb-1 text-black">Nama Kategori</label>
-                  <input className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm" placeholder="VIP / Regular" value={name} onChange={(e) => setName(e.target.value)} />
+                  <input className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm" placeholder="VIP / Regular" value={name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-head text-[0.6rem] uppercase block mb-1 text-black">Quota</label>
-                    <input type="number" className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm" value={quota} onChange={(e) => setQuota(Number(e.target.value))} />
+                    <input type="number" className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm" value={quota} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuota(Number(e.target.value))} />
                   </div>
                   <div>
                     <label className="font-head text-[0.6rem] uppercase block mb-1 text-black">Harga</label>
-                    <input type="number" className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm" value={price} onChange={(e) => setPrice(Number(e.target.value))} />
+                    <input type="number" className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm" value={price} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrice(Number(e.target.value))} />
                   </div>
                 </div>
                 <div>
                   <label className="font-head text-[0.6rem] uppercase block mb-1 text-black">Pilih Event</label>
-                  <select className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm cursor-pointer" value={eventId} onChange={(e) => setEventId(e.target.value)}>
+                  <select className="w-full px-3 py-2 border-2 border-black bg-[#f9f6ef] text-sm cursor-pointer" value={eventId} onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEventId(e.target.value)}>
                     <option value="">Pilih Event</option>
                     {events.map((ev) => (
                       <option key={ev.id} value={ev.id}>{ev.title}</option>

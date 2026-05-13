@@ -203,13 +203,13 @@ export default function OrdersClient(props: OrdersClientProps) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <input
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(event.target.value)}
               placeholder="Cari berdasarkan Order ID..."
               className="h-11 px-3 border-2 border-black bg-white rounded font-bold"
             />
             <select
               value={statusFilter}
-              onChange={(event) =>
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                 setStatusFilter(event.target.value as "All" | PaymentStatus)
               }
               className="h-11 px-3 border-2 border-black bg-white rounded font-bold"
@@ -328,7 +328,7 @@ export default function OrdersClient(props: OrdersClientProps) {
               </label>
               <select
                 value={updateStatusValue}
-                onChange={(event) =>
+                onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                   setUpdateStatusValue(event.target.value as PaymentStatus)
                 }
                 className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold"

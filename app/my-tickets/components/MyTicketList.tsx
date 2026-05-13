@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import {
   TICKETS,
   ORDERS,
@@ -129,7 +129,7 @@ export default function MyTicketList({ role, userId }: MyTicketListProps) {
               placeholder="Cari kode tiket / event..."
               className="w-full pl-9 pr-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black placeholder:text-gray-400 outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             />
           </div>
 
@@ -138,7 +138,7 @@ export default function MyTicketList({ role, userId }: MyTicketListProps) {
             <select
               className="px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black font-sans outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
             >
               <option value="all">Semua Status</option>
               {availableStatuses.map((s) => (
@@ -181,6 +181,7 @@ function TicketCard({
 }: {
   ticket: TicketData;
   showCustomer: boolean;
+  key?: string | number;
 }) {
   const order = getOrder(ticket.order_id);
   const customer = order ? getCustomer(order.customer_id) : null;

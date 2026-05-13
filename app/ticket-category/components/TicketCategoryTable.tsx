@@ -60,7 +60,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
   return (
     <div>
       <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
-        <input placeholder="Cari kategori..." className="border-2 border-black px-3 py-2 bg-white text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input placeholder="Cari kategori..." className="border-2 border-black px-3 py-2 bg-white text-sm" value={search} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)} />
         <div className="flex items-center gap-3">
           <span className="font-head text-[0.65rem] uppercase bg-[#ffdb33] border-2 border-black px-3 py-1.5">{filtered.length} kategori</span>
           {canManage && <TicketCategoryForm onSave={handleSave} />}

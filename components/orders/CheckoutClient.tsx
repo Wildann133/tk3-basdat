@@ -220,7 +220,7 @@ export default function CheckoutClient({
               <select
                 required
                 value={formState.ticketCategoryId}
-                onChange={(eventChange) =>
+                onChange={(eventChange: React.ChangeEvent<HTMLSelectElement>) =>
                   setFormState((prev) => ({
                     ...prev,
                     ticketCategoryId: eventChange.target.value,
@@ -247,7 +247,7 @@ export default function CheckoutClient({
                 max={10}
                 step={1}
                 value={formState.quantity}
-                onChange={(eventChange) =>
+                onChange={(eventChange: React.ChangeEvent<HTMLInputElement>) =>
                   setFormState((prev) => ({
                     ...prev,
                     quantity: Number(eventChange.target.value),
@@ -266,7 +266,7 @@ export default function CheckoutClient({
                 <Input
                   placeholder="Contoh: A1, A2, A3"
                   value={formState.seatsInput}
-                  onChange={(eventChange) =>
+                  onChange={(eventChange: React.ChangeEvent<HTMLInputElement>) =>
                     setFormState((prev) => ({
                       ...prev,
                       seatsInput: eventChange.target.value,
@@ -285,7 +285,7 @@ export default function CheckoutClient({
                 <Input
                   placeholder="Masukkan kode promo"
                   value={formState.promoCodeInput}
-                  onChange={(eventChange) =>
+                  onChange={(eventChange: React.ChangeEvent<HTMLInputElement>) =>
                     setFormState((prev) => ({
                       ...prev,
                       promoCodeInput: eventChange.target.value,
