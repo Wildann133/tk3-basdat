@@ -32,6 +32,11 @@ export default async function Home() {
             Sign up
           </Button>
         </Link>
+        <Link href="/ticket-category">
+          <Button size="lg" variant="secondary" className="font-bold border-2 border-black bg-[#ffdb33] text-black shadow-[4px_4px_0_0_#000] hover:translate-y-[2px] hover:translate-x-[2px] hover:shadow-none transition-all rounded-none">
+            See Ticket Categories
+          </Button>
+        </Link>
       </div>
     </div>
   );

@@ -11,7 +11,7 @@ export function proxy(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/register') ||
     pathname.startsWith('/promotions') ||
-    pathname.startsWith('/ticket-categories');
+    pathname.startsWith('/ticket-category');
 
   // 2. Jika user BELUM login dan mencoba akses path terproteksi
   if (!session && !isPublicPath) {
