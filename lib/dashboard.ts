@@ -22,6 +22,20 @@ export async function requireDashboardSession(expectedRole: DashboardRole) {
   return { ok: true as const, session };
 }
 
+export async function requireDashboardRoles(allowedRoles: DashboardRole[]) {
+  const session = (await getSession()) as DashboardSession | null;
+
+  if (!session) {
+    return { ok: false as const, response: Response.json({ error: "Unauthorized" }, { status: 401 }) };
+  }
+
+  if (!allowedRoles.includes(session.role)) {
+    return { ok: false as const, response: Response.json({ error: "Forbidden" }, { status: 403 }) };
+  }
+
+  return { ok: true as const, session };
+}
+
 export async function fetchDashboardData<T>(url: string): Promise<T> {
   const response = await fetch(url, { cache: "no-store" });
 
