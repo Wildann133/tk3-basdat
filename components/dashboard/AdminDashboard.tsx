@@ -1,14 +1,111 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/retroui/Card";
 import { Users, Calendar, TrendingUp, TicketPercent, ArrowUpRight, CheckCircle2 } from "lucide-react";
-import { ADMIN_STATS } from "@/lib/dummyData";
 import Link from "next/link";
+import { fetchDashboardData } from "@/lib/dashboard";
+
+type AdminDashboardData = {
+  totalUsers: number;
+  totalEvents: number;
+  omzetPlatform: number;
+  activePromotions: number;
+  promoPercentCount: number;
+  promoNominalCount: number;
+  promoUsageCount: number;
+  venues: number;
+  venuesWithSeats: number;
+  maxCapacity: number;
+};
+
+const initialData: AdminDashboardData = {
+  totalUsers: 0,
+  totalEvents: 0,
+  omzetPlatform: 0,
+  activePromotions: 0,
+  promoPercentCount: 0,
+  promoNominalCount: 0,
+  promoUsageCount: 0,
+  venues: 0,
+  venuesWithSeats: 0,
+  maxCapacity: 0,
+};
+
+const formatRupiah = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
+
+function SkeletonBlock({ className }: { className: string }) {
+  return <div className={`animate-pulse rounded-md bg-black/10 ${className}`} />;
+}
 
 export default function AdminDashboard() {
+  const [data, setData] = useState<AdminDashboardData>(initialData);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadData = async () => {
+      setError("");
+      setLoading(true);
+      try {
+        const result = await fetchDashboardData<AdminDashboardData>("/api/dashboard/admin");
+        if (active) {
+          setData(result);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "Gagal memuat dashboard admin.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const {
+    totalUsers,
+    totalEvents,
+    omzetPlatform,
+    activePromotions,
+    promoPercentCount,
+    promoNominalCount,
+    promoUsageCount,
+    venues,
+    venuesWithSeats,
+    maxCapacity,
+  } = data;
+
   return (
     <div className="flex-1 p-4 md:p-8 space-y-6 min-h-full">
-      {/* HEADER: Bento Full Width */}
-      <div className="bg-primary text-black p-8 rounded-xl border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <SkeletonBlock className="h-40 md:col-span-1 border-4 border-black" />
+          <SkeletonBlock className="h-80 md:col-span-2 border-4 border-black" />
+          <SkeletonBlock className="h-40 md:col-span-1 border-4 border-black" />
+          <SkeletonBlock className="h-48 md:col-span-2 border-4 border-black" />
+          <SkeletonBlock className="h-48 md:col-span-2 border-4 border-black" />
+        </div>
+      )}
+      {error && (
+        <div className="border-2 border-red-500 bg-red-100 text-red-600 font-bold p-3">
+          {error}
+        </div>
+      )}
+      {!loading && (
+        <>
+          {/* HEADER: Bento Full Width */}
+          <div className="bg-primary text-black p-8 rounded-xl border-4 border-black shadow-[8px_8px_0_0_#000] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
         <div>
           <span className="inline-block px-3 py-1 bg-black text-white text-xs font-bold uppercase tracking-widest border-2 border-black rounded-full mb-3">Administrator</span>
           <h1 className="text-4xl md:text-5xl font-head tracking-tighter mb-2 leading-none">System Console</h1>
@@ -32,7 +129,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-extrabold text-black/60 mb-1 uppercase tracking-widest">Total Pengguna</p>
-              <h2 className="text-4xl font-head font-bold mb-1">{ADMIN_STATS.totalUsers.toLocaleString()}</h2>
+              <h2 className="text-4xl font-head font-bold mb-1">{totalUsers.toLocaleString("id-ID")}</h2>
               <p className="text-sm font-bold text-black/70 flex items-center gap-1"><CheckCircle2 size={16} /> Aktif di sistem</p>
             </div>
           </CardContent>
@@ -48,15 +145,15 @@ export default function AdminDashboard() {
             <div className="space-y-6">
               <div className="flex justify-between items-end border-b border-zinc-700 pb-3">
                 <span className="text-zinc-400 font-bold uppercase tracking-wider text-sm">Total Venue Terdaftar</span>
-                <span className="text-3xl font-head text-primary">{ADMIN_STATS.venues} Lokasi</span>
+                <span className="text-3xl font-head text-primary">{venues.toLocaleString("id-ID")} Lokasi</span>
               </div>
               <div className="flex justify-between items-end border-b border-zinc-700 pb-3">
-                <span className="text-zinc-400 font-bold uppercase tracking-wider text-sm">Reserved Seating</span>
-                <span className="text-3xl font-head text-white">2 Venue</span>
+                <span className="text-zinc-400 font-bold uppercase tracking-wider text-sm">Venue Dengan Kursi</span>
+                <span className="text-3xl font-head text-white">{venuesWithSeats.toLocaleString("id-ID")} Venue</span>
               </div>
               <div className="flex justify-between items-end border-b border-zinc-700 pb-3">
                 <span className="text-zinc-400 font-bold uppercase tracking-wider text-sm">Kapasitas Terbesar</span>
-                <span className="text-3xl font-head text-white">1,000 Kursi</span>
+                <span className="text-3xl font-head text-white">{maxCapacity.toLocaleString("id-ID")} Kursi</span>
               </div>
             </div>
             <Link href="/venues">
@@ -75,7 +172,7 @@ export default function AdminDashboard() {
             </div>
             <div>
               <p className="text-xs font-extrabold text-zinc-500 mb-1 uppercase tracking-widest">Total Acara</p>
-              <h2 className="text-4xl font-head font-bold mb-1">{ADMIN_STATS.totalEvents.toLocaleString()}</h2>
+              <h2 className="text-4xl font-head font-bold mb-1">{totalEvents.toLocaleString("id-ID")}</h2>
               <p className="text-sm font-bold text-zinc-500">Tercatat Bulan Ini</p>
             </div>
           </CardContent>
@@ -88,7 +185,7 @@ export default function AdminDashboard() {
           </div>
           <CardContent className="p-6 relative z-10 h-full flex flex-col justify-center">
             <p className="text-sm font-extrabold text-black/70 mb-1 uppercase tracking-widest">Omzet Platform</p>
-            <h2 className="text-5xl md:text-6xl font-head font-black tracking-tighter mb-1 text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{ADMIN_STATS.omzetPlatform}</h2>
+            <h2 className="text-5xl md:text-6xl font-head font-black tracking-tighter mb-1 text-white drop-shadow-[2px_2px_0_rgba(0,0,0,1)]">{formatRupiah(omzetPlatform)}</h2>
             <p className="text-md font-bold bg-black text-white w-fit px-3 py-1 rounded-sm mt-2">Gross volume</p>
           </CardContent>
         </Card>
@@ -99,7 +196,7 @@ export default function AdminDashboard() {
              <div className="p-4 bg-primary rounded-2xl border-4 border-black mb-4 group-hover:rotate-12 transition-transform">
                <TicketPercent size={36} />
              </div>
-             <h2 className="text-4xl font-head font-bold">{ADMIN_STATS.activePromotions}</h2>
+             <h2 className="text-4xl font-head font-bold">{activePromotions.toLocaleString("id-ID")}</h2>
              <p className="text-xs font-extrabold text-zinc-500 uppercase">Promo Aktif</p>
            </div>
            <div className="p-6 md:w-2/3 flex flex-col justify-between">
@@ -108,22 +205,24 @@ export default function AdminDashboard() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <p className="text-xs font-bold text-zinc-500 uppercase">Promo Persentase</p>
-                    <p className="text-xl font-black">1 Aktif</p>
+                    <p className="text-xl font-black">{promoPercentCount.toLocaleString("id-ID")} Aktif</p>
                   </div>
                   <div>
                     <p className="text-xs font-bold text-zinc-500 uppercase">Promo Nominal</p>
-                    <p className="text-xl font-black">1 Aktif</p>
+                    <p className="text-xl font-black">{promoNominalCount.toLocaleString("id-ID")} Aktif</p>
                   </div>
                   <div className="col-span-2 mt-2">
                     <p className="text-xs font-bold text-zinc-500 uppercase">Total Penggunaan</p>
-                    <p className="text-2xl font-black text-primary drop-shadow-[1px_1px_0_rgba(0,0,0,1)]">57 Kali</p>
+                    <p className="text-2xl font-black text-primary drop-shadow-[1px_1px_0_rgba(0,0,0,1)]">{promoUsageCount.toLocaleString("id-ID")} Kali</p>
                   </div>
                 </div>
               </div>
            </div>
         </Card>
 
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

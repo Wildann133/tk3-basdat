@@ -1,33 +1,119 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
-import { CalendarCheck, Ticket, TrendingUp, MapPin, Plus } from "lucide-react";
-import { ORGANIZER_STATS, EVENTS } from "@/lib/dummyData";
+import { CalendarCheck, Ticket, TrendingUp, MapPin } from "lucide-react";
 import Link from "next/link";
+import { fetchDashboardData } from "@/lib/dashboard";
+
+type OrganizerEvent = {
+  event_id: string;
+  event_title: string;
+  event_datetime: string;
+  venue_id: string;
+  percent_sold: number;
+  status: string;
+};
+
+type OrganizerDashboardData = {
+  organizerName: string;
+  activeEvents: number;
+  ticketsSold: number;
+  revenue: number;
+  venuesMitra: number;
+  events: OrganizerEvent[];
+};
+
+const initialData: OrganizerDashboardData = {
+  organizerName: "Organizer",
+  activeEvents: 0,
+  ticketsSold: 0,
+  revenue: 0,
+  venuesMitra: 0,
+  events: [],
+};
+
+const formatRupiah = (value: number) => `Rp ${value.toLocaleString("id-ID")}`;
+
+function SkeletonBlock({ className }: { className: string }) {
+  return <div className={`animate-pulse rounded-md bg-white/10 ${className}`} />;
+}
 
 export default function OrganizerDashboard() {
-  const activeEventsList = EVENTS.filter(e => e.organizer_id === "o1");
+  const [data, setData] = useState<OrganizerDashboardData>(initialData);
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+
+    const loadData = async () => {
+      setError("");
+      setLoading(true);
+      try {
+        const result = await fetchDashboardData<OrganizerDashboardData>("/api/dashboard/organizer");
+        if (active) {
+          setData(result);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err instanceof Error ? err.message : "Gagal memuat dashboard organizer.");
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const { organizerName, activeEvents, ticketsSold, revenue, venuesMitra, events } = data;
 
   return (
     <div className="flex-1 p-4 md:p-8 min-h-full">
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-min">
-        
+      {loading && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-min">
+          <SkeletonBlock className="h-44 md:col-span-4 border-4 border-black" />
+          <SkeletonBlock className="h-[420px] md:col-span-3 border-4 border-black" />
+          <div className="grid grid-cols-2 md:grid-cols-1 gap-6 md:col-span-1">
+            <SkeletonBlock className="h-40 border-4 border-black" />
+            <SkeletonBlock className="h-40 border-4 border-black" />
+            <SkeletonBlock className="h-40 border-4 border-black" />
+            <SkeletonBlock className="h-40 border-4 border-black" />
+          </div>
+        </div>
+      )}
+      {error && (
+        <div className="border-2 border-red-500 bg-red-100 text-red-600 font-bold p-3 mb-6">
+          {error}
+        </div>
+      )}
+      {!loading && (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 auto-rows-min">
         {/* HEADER: BENTO BLOCK */}
         <div className="col-span-1 md:col-span-4 bg-secondary text-white p-6 md:p-8 rounded-xl border-4 border-black shadow-[6px_6px_0_0_#000] flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div>
             <p className="text-primary font-bold mb-2 tracking-widest text-sm uppercase">Dashboard Penyelenggara</p>
-            <h1 className="text-4xl md:text-5xl font-head tracking-wide mb-1">Andi Wijaya</h1>
-            <p className="text-zinc-300 font-medium">Kelola {ORGANIZER_STATS.activeEvents} acara aktif Anda di TikTakTuk</p>
+            <h1 className="text-4xl md:text-5xl font-head tracking-wide mb-1">{organizerName}</h1>
+            <p className="text-zinc-300 font-medium">Kelola {activeEvents.toLocaleString("id-ID")} acara aktif Anda di TikTakTuk</p>
           </div>
           <div className="flex flex-wrap gap-4">
             <Link href="/myevents">
-            <Button className="bg-primary text-black hover:bg-primary-hover border-4 border-black rounded-lg shadow-[4px_4px_0_0_#000] font-bold">
-              + Kelola Acara
-            </Button>
+              <Button className="bg-primary text-black hover:bg-primary-hover border-4 border-black rounded-lg shadow-[4px_4px_0_0_#000] font-bold">
+                + Kelola Acara
+              </Button>
             </Link>
             <Link href="/venues">
-            <Button className="bg-white text-black hover:bg-zinc-200 border-4 border-black rounded-lg shadow-[4px_4px_0_0_#000] font-bold">
-              Venue
-            </Button>
+              <Button className="bg-white text-black hover:bg-zinc-200 border-4 border-black rounded-lg shadow-[4px_4px_0_0_#000] font-bold">
+                Venue
+              </Button>
             </Link>
           </div>
         </div>
@@ -44,8 +130,8 @@ export default function OrganizerDashboard() {
             </div>
 
             <div className="space-y-4 flex-1">
-              {activeEventsList.map((event, idx) => (
-                <div key={idx} className="flex flex-col md:flex-row justify-between md:items-center border-4 border-zinc-200 hover:border-black transition-colors p-4 md:p-5 rounded-lg group bg-zinc-50 hover:bg-white">
+              {events.map((event) => (
+                <div key={event.event_id} className="flex flex-col md:flex-row justify-between md:items-center border-4 border-zinc-200 hover:border-black transition-colors p-4 md:p-5 rounded-lg group bg-zinc-50 hover:bg-white">
                   <div>
                     <div className="flex items-center space-x-3 mb-2">
                       <h3 className="font-head text-xl font-bold text-black">{event.event_title}</h3>
@@ -53,7 +139,7 @@ export default function OrganizerDashboard() {
                     </div>
                     <div className="flex flex-wrap items-center text-sm font-bold text-zinc-600 gap-4">
                       <span className="flex items-center text-secondary bg-primary px-2 py-1 border-2 border-black rounded shadow-[2px_2px_0_0_#000]">
-                        <TrendingUp size={14} strokeWidth={3} className="mr-1"/> 85% terjual
+                        <TrendingUp size={14} strokeWidth={3} className="mr-1"/> {event.percent_sold}% terjual
                       </span>
                       <span className="flex items-center italic">
                         <MapPin size={14} className="mr-1"/> Lokasi ID: {event.venue_id}
@@ -62,7 +148,7 @@ export default function OrganizerDashboard() {
                   </div>
                   <div className="mt-4 md:mt-0 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Link href="/myevents">
-                    <Button variant="outline" size="sm" className="bg-black text-white hover:bg-zinc-800">Detail</Button>
+                      <Button variant="outline" size="sm" className="bg-black text-white hover:bg-zinc-800">Detail</Button>
                     </Link>
                   </div>
                 </div>
@@ -76,7 +162,7 @@ export default function OrganizerDashboard() {
           <Card className="bg-[#4ade80] border-4 border-black shadow-[4px_4px_0_0_#000] rotate-1 hover:rotate-0 transition-transform">
             <CardContent className="p-4 md:p-6 text-black flex flex-col items-center text-center justify-center h-full">
               <CalendarCheck size={32} className="mb-2 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] text-white" />
-              <h2 className="text-3xl font-head font-bold mb-1">{ORGANIZER_STATS.activeEvents}</h2>
+              <h2 className="text-3xl font-head font-bold mb-1">{activeEvents.toLocaleString("id-ID")}</h2>
               <p className="text-xs font-black uppercase tracking-wider opacity-80">Acara Aktif</p>
             </CardContent>
           </Card>
@@ -84,7 +170,7 @@ export default function OrganizerDashboard() {
           <Card className="bg-primary border-4 border-black shadow-[4px_4px_0_0_#000] -rotate-1 hover:rotate-0 transition-transform">
             <CardContent className="p-4 md:p-6 text-black flex flex-col items-center text-center justify-center h-full">
               <Ticket size={32} className="mb-2 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] text-white" />
-              <h2 className="text-3xl font-head font-bold mb-1">{ORGANIZER_STATS.ticketsSold}</h2>
+              <h2 className="text-3xl font-head font-bold mb-1">{ticketsSold.toLocaleString("id-ID")}</h2>
               <p className="text-xs font-black uppercase tracking-wider opacity-80">Terjual</p>
             </CardContent>
           </Card>
@@ -92,21 +178,21 @@ export default function OrganizerDashboard() {
           <Card className="bg-[#a78bfa] border-4 border-black shadow-[4px_4px_0_0_#000] rotate-2 hover:rotate-0 transition-transform">
             <CardContent className="p-4 md:p-6 text-black flex flex-col items-center text-center justify-center h-full">
               <TrendingUp size={32} className="mb-2 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] text-white" />
-              <h2 className="text-2xl md:text-3xl font-head font-bold mb-1">{ORGANIZER_STATS.revenue}</h2>
+              <h2 className="text-2xl md:text-3xl font-head font-bold mb-1">{formatRupiah(revenue)}</h2>
               <p className="text-xs font-black uppercase tracking-wider opacity-80">Revenue</p>
             </CardContent>
           </Card>
-          
+
           <Card className="bg-white border-4 border-black shadow-[4px_4px_0_0_#000] -rotate-2 hover:rotate-0 transition-transform">
             <CardContent className="p-4 md:p-6 text-black flex flex-col items-center text-center justify-center h-full">
               <MapPin size={32} className="mb-2 drop-shadow-[2px_2px_0_rgba(0,0,0,1)] text-primary" />
-              <h2 className="text-3xl font-head font-bold mb-1">{ORGANIZER_STATS.venuesMitra}</h2>
+              <h2 className="text-3xl font-head font-bold mb-1">{venuesMitra.toLocaleString("id-ID")}</h2>
               <p className="text-xs font-black uppercase tracking-wider opacity-80">Venue Mitra</p>
             </CardContent>
           </Card>
         </div>
-
-      </div>
+        </div>
+      )}
     </div>
   );
 }
