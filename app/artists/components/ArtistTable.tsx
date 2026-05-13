@@ -10,6 +10,17 @@ export default function ArtistTable({ role }: { role?: string }) {
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // STATE UNTUK NOTIFIKASI (Toast)
+  const [notification, setNotification] = useState<{ type: "success" | "error", message: string } | null>(null);
+
+  // FUNGSI UNTUK MENAMPILKAN NOTIFIKASI SELAMA 3 DETIK
+  const showNotification = (type: "success" | "error", message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
 
   // Ambil data dari API saat pertama kali load
   useEffect(() => {
@@ -20,6 +31,7 @@ export default function ArtistTable({ role }: { role?: string }) {
         setArtists(data);
       } catch (error) {
         console.error("Gagal memuat artis:", error);
+        showNotification("error", "Gagal memuat data dari server.");
       } finally {
         setIsLoading(false);
       }
@@ -32,12 +44,14 @@ export default function ArtistTable({ role }: { role?: string }) {
       const res = await fetch(`/api/artists?id=${id}`, { method: 'DELETE' });
       if (res.ok) {
         setArtists(artists.filter((a) => a.id !== id));
+        showNotification("success", "Artis berhasil dihapus!");
       } else {
         const err = await res.json();
-        alert(err.error);
+        showNotification("error", err.error || "Gagal menghapus artis.");
       }
     } catch (error) {
       console.error("Gagal hapus:", error);
+      showNotification("error", "Terjadi kesalahan pada sistem.");
     }
   };
 
@@ -56,15 +70,18 @@ export default function ArtistTable({ role }: { role?: string }) {
         const savedArtist = await res.json();
         if (isEdit) {
           setArtists(artists.map((a) => (a.id === savedArtist.id ? savedArtist : a)));
+          showNotification("success", "Data artis berhasil diupdate!");
         } else {
           setArtists([...artists, savedArtist]);
+          showNotification("success", "Artis baru berhasil ditambahkan!");
         }
       } else {
         const err = await res.json();
-        alert(err.error);
+        showNotification("error", err.error || "Gagal menyimpan artis.");
       }
     } catch (error) {
       console.error("Gagal simpan:", error);
+      showNotification("error", "Terjadi kesalahan pada sistem.");
     }
   };
 
@@ -76,6 +93,18 @@ export default function ArtistTable({ role }: { role?: string }) {
 
   return (
     <div>
+      {/* TOAST NOTIFICATION UI */}
+      {notification && (
+        <div 
+          className={`fixed top-6 right-6 z- px-5 py-3 border-4 border-black font-head tracking-wide text-sm shadow-[6px_6px_0_0_#000] transition-all animate-bounce ${
+            notification.type === "success" ? "bg-[#a7c957] text-black" : "bg-[#e63946] text-white"
+          }`}
+        >
+          {notification.type === "success" ? "✅ " : "⚠️ "} 
+          {notification.message}
+        </div>
+      )}
+
       <div className="flex justify-between mb-5 flex-wrap gap-4">
         <input
           placeholder="Cari artist..."
@@ -89,6 +118,7 @@ export default function ArtistTable({ role }: { role?: string }) {
       <table className="w-full border-2 border-black">
         <thead className="bg-black text-[#ffdb33]">
           <tr>
+            <th className="p-3 text-left font-head tracking-wide w-32">ID Artis</th>
             <th className="p-3 text-left font-head tracking-wide">Nama</th>
             <th className="p-3 text-left font-head tracking-wide">Genre</th>
             {isAdmin && <th className="p-3 text-center font-head tracking-wide">Aksi</th>}
@@ -96,12 +126,15 @@ export default function ArtistTable({ role }: { role?: string }) {
         </thead>
         <tbody>
           {isLoading ? (
-            <tr><td colSpan={isAdmin ? 3 : 2} className="p-10 text-center text-gray-500">Menghubungkan ke Neon Database...</td></tr>
+            <tr><td colSpan={isAdmin ? 4 : 3} className="p-10 text-center text-gray-500">Menghubungkan ke Neon Database...</td></tr>
           ) : filteredArtists.length === 0 ? (
-            <tr><td colSpan={isAdmin ? 3 : 2} className="p-6 text-center text-gray-400">Tidak ada artis.</td></tr>
+            <tr><td colSpan={isAdmin ? 4 : 3} className="p-6 text-center text-gray-400">Tidak ada artis.</td></tr>
           ) : (
             filteredArtists.map((artist, i) => (
               <tr key={artist.id} className={`border-t-2 border-black transition-colors ${i % 2 === 0 ? "bg-white" : "bg-[#f9f6ef]"} hover:bg-[#fff9d6]`}>
+                <td className="p-3 font-mono text-xs text-gray-500 truncate max-w-[120px]" title={artist.id}>
+                  {artist.id}
+                </td>
                 <td className="p-3 font-sans text-sm font-semibold text-black">{artist.name}</td>
                 <td className="p-3 font-sans text-sm text-gray-600">{artist.genre || <span className="italic text-gray-300">—</span>}</td>
                 {isAdmin && (
