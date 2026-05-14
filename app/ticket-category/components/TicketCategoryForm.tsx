@@ -104,7 +104,8 @@ export default function TicketCategoryForm({ category, onSave }: any) {
                     className={`w-full px-3 py-2 border-2 bg-[#f9f6ef] text-sm focus:bg-[#ffdb33] outline-none ${errorMsg.includes("Category Name") ? "border-[#e63946]" : "border-black"}`} 
                     placeholder="Contoh: VIP / Regular" 
                     value={name} 
-                    onChange={(e) => setName(e.target.value)} 
+                    // PERBAIKAN TYPESCRIPT DI SINI
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setName(e.target.value)} 
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -114,7 +115,8 @@ export default function TicketCategoryForm({ category, onSave }: any) {
                       type="number" 
                       className={`w-full px-3 py-2 border-2 bg-[#f9f6ef] text-sm focus:bg-[#ffdb33] outline-none ${errorMsg.includes("Quota") ? "border-[#e63946]" : "border-black"}`} 
                       value={quota} 
-                      onChange={(e) => setQuota(e.target.value)} 
+                      // PERBAIKAN TYPESCRIPT DI SINI
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuota(e.target.value)} 
                     />
                   </div>
                   <div>
@@ -123,7 +125,8 @@ export default function TicketCategoryForm({ category, onSave }: any) {
                       type="number" 
                       className={`w-full px-3 py-2 border-2 bg-[#f9f6ef] text-sm focus:bg-[#ffdb33] outline-none ${errorMsg.includes("Price") ? "border-[#e63946]" : "border-black"}`} 
                       value={price} 
-                      onChange={(e) => setPrice(e.target.value)} 
+                      // PERBAIKAN TYPESCRIPT DI SINI
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPrice(e.target.value)} 
                     />
                   </div>
                 </div>
@@ -132,11 +135,11 @@ export default function TicketCategoryForm({ category, onSave }: any) {
                   <select 
                     className={`w-full px-3 py-2 border-2 bg-[#f9f6ef] text-sm cursor-pointer focus:bg-[#ffdb33] outline-none ${errorMsg.includes("Event") ? "border-[#e63946]" : "border-black"}`} 
                     value={eventId} 
-                    onChange={(e) => setEventId(e.target.value)}
+                    // PERBAIKAN TYPESCRIPT DI SINI
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setEventId(e.target.value)}
                   >
                     <option value="" disabled>-- Pilih Event --</option>
                     {events.map((ev) => (
-                      // Menggunakan fallback OR (||) agar aman dari perbedaan nama kolom API
                       <option key={ev.id || ev.event_id} value={ev.id || ev.event_id}>
                         {ev.title || ev.event_title}
                       </option>
