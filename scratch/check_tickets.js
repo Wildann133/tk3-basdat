@@ -12,9 +12,10 @@ const pool = new Pool({
 async function run() {
   try {
     const res = await pool.query(`
-      SELECT * FROM EVENT LIMIT 1
+      SELECT event_id, event_title, organizer_id FROM EVENT 
+      WHERE organizer_id = '53f31704-784c-4bc6-bd71-ca85065171c3'
     `);
-    console.log(Object.keys(res.rows[0]));
+    console.log(res.rows);
   } catch (err) {
     console.error('Error:', err);
   } finally {

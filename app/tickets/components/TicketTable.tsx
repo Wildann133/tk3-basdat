@@ -55,8 +55,6 @@ export default function TicketTable({ role, userId }: { role?: string; userId?: 
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   
-  const [showAll, setShowAll] = useState(false);
-  
   // States for Update Modal
   const [updateTicket, setUpdateTicket] = useState<TicketFromAPI | null>(null);
   
@@ -71,7 +69,6 @@ export default function TicketTable({ role, userId }: { role?: string; userId?: 
       const res = await fetch("/api/tickets", { cache: "no-store" });
       if (!res.ok) throw new Error("Gagal memuat tiket");
       const data: TicketFromAPI[] = await res.json();
-      console.log("Fetched tickets:", data.length, "User ID:", userId, "Role:", role);
       setTickets(data);
     } catch (err) {
       console.error(err);
@@ -121,7 +118,7 @@ export default function TicketTable({ role, userId }: { role?: string; userId?: 
   const filtered = tickets
     .filter((t) => {
       // Role-based filtering for Organizer
-      if (isOrganizer && userId && t.organizer_user_id && !showAll) {
+      if (isOrganizer && userId && t.organizer_user_id) {
         const tOrgId = String(t.organizer_user_id).toLowerCase().trim();
         const curUserId = String(userId).toLowerCase().trim();
         if (tOrgId !== curUserId) return false;
@@ -150,41 +147,6 @@ export default function TicketTable({ role, userId }: { role?: string; userId?: 
 
   return (
     <div>
-      {/* DEBUG PANEL */}
-      {(tickets.length === 0 || filtered.length === 0) && (
-        <div className="mb-4 p-4 border-2 border-dashed border-black bg-gray-50 text-[0.7rem] font-mono">
-          <p className="font-bold mb-1">DEBUG INFO:</p>
-          <p>Role: {role} | UserID: {userId || "NULL"}</p>
-          <p>Total raw tickets: {tickets.length} | Visible after filter: {filtered.length}</p>
-          {tickets.length > 0 && filtered.length === 0 && (
-            <>
-              <p className="mt-2 text-red-600 font-bold underline italic uppercase">Kenapa kosong? ID Organizer di database tidak cocok dengan UserID di atas.</p>
-              <p className="mt-2 text-blue-600">Sampel OrgID di DB:</p>
-              {tickets.slice(0, 3).map((t, i) => (
-                <div key={i} className="border-t border-gray-200 mt-1 pt-1 italic">
-                  Ticket {t.ticket_code} → OrgID DB: [{t.organizer_user_id || "NULL"}]
-                </div>
-              ))}
-            </>
-          )}
-          <button 
-            onClick={() => fetchTickets()} 
-            className="mt-3 px-3 py-1 bg-black text-white text-[0.6rem] uppercase font-head shadow-[2px_2px_0_0_#ffdb33] active:translate-y-px active:shadow-none transition-all"
-          >
-            Refresh Data
-          </button>
-          
-          {isOrganizer && (
-            <button 
-              onClick={() => setShowAll(!showAll)} 
-              className={`mt-3 ml-2 px-3 py-1 border-2 border-black text-[0.6rem] uppercase font-head shadow-[2px_2px_0_0_#000] active:translate-y-px active:shadow-none transition-all ${showAll ? 'bg-red-500 text-white' : 'bg-white text-black'}`}
-            >
-              {showAll ? "Disable Debug (Filter ON)" : "Enable Debug (Show ALL)"}
-            </button>
-          )}
-        </div>
-      )}
-
       {/* TOOLBAR */}
       <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
         <div className="relative flex-1 max-w-xs">
