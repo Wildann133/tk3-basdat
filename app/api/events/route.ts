@@ -126,14 +126,21 @@ export async function POST(request: Request) {
     const artists = Array.isArray(body.artists)
       ? body.artists.map((artist: unknown) => String(artist).trim()).filter(Boolean)
       : [];
-    const ticketCategories = Array.isArray(body.ticket_categories)
+    const ticketCategories: { name: string; price: number; capacity: number }[] = Array.isArray(body.ticket_categories)
       ? body.ticket_categories
-          .map((category: any) => ({
-            name: String(category?.name ?? "").trim(),
-            price: Number(category?.price),
-            capacity: Number(category?.capacity),
-          }))
-          .filter((category) => category.name && Number.isFinite(category.price) && Number.isFinite(category.capacity))
+          .map((category: unknown) => {
+            const parsedCategory = typeof category === "object" && category !== null ? category : {};
+            const record = parsedCategory as Record<string, unknown>;
+            return {
+              name: String(record.name ?? "").trim(),
+              price: Number(record.price),
+              capacity: Number(record.capacity),
+            };
+          })
+          .filter(
+            (category: { name: string; price: number; capacity: number }) =>
+              category.name && Number.isFinite(category.price) && Number.isFinite(category.capacity)
+          )
       : [];
 
     if (!title || !eventDatetime || !venueId) {
@@ -234,14 +241,21 @@ export async function PUT(request: Request) {
     const artists = Array.isArray(body.artists)
       ? body.artists.map((artist: unknown) => String(artist).trim()).filter(Boolean)
       : [];
-    const ticketCategories = Array.isArray(body.ticket_categories)
+    const ticketCategories: { name: string; price: number; capacity: number }[] = Array.isArray(body.ticket_categories)
       ? body.ticket_categories
-          .map((category: any) => ({
-            name: String(category?.name ?? "").trim(),
-            price: Number(category?.price),
-            capacity: Number(category?.capacity),
-          }))
-          .filter((category) => category.name && Number.isFinite(category.price) && Number.isFinite(category.capacity))
+          .map((category: unknown) => {
+            const parsedCategory = typeof category === "object" && category !== null ? category : {};
+            const record = parsedCategory as Record<string, unknown>;
+            return {
+              name: String(record.name ?? "").trim(),
+              price: Number(record.price),
+              capacity: Number(record.capacity),
+            };
+          })
+          .filter(
+            (category: { name: string; price: number; capacity: number }) =>
+              category.name && Number.isFinite(category.price) && Number.isFinite(category.capacity)
+          )
       : [];
 
     if (!id || !title || !eventDatetime || !venueId) {
