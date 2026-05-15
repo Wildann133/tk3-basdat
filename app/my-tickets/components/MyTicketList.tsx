@@ -197,6 +197,7 @@ function TicketCard({
 }: {
   ticket: TicketFromAPI;
   showCustomer: boolean;
+  key?: React.Key;
 }) {
   const statusLabel = ticket.payment_status === "Paid" ? "Lunas" : ticket.payment_status === "Cancelled" ? "Dibatalkan" : ticket.payment_status;
   const statusStyle = STATUS_COLORS[ticket.payment_status] ?? STATUS_COLORS["Paid"];
