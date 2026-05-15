@@ -24,7 +24,6 @@ export async function GET() {
         t.ticket_code,
         t.torder_id AS order_id,
         t.tcategory_id,
-        t.created_at,
         tc.category_name,
         tc.price AS category_price,
         e.event_title,
@@ -42,7 +41,6 @@ export async function GET() {
       JOIN CUSTOMER c ON c.customer_id = o.customer_id
       LEFT JOIN HAS_RELATIONSHIP hr ON hr.ticket_id = t.ticket_id
       LEFT JOIN SEAT s ON s.seat_id = hr.seat_id
-      ORDER BY t.created_at DESC
     `);
     return NextResponse.json(result.rows, { status: 200 });
   } catch (error: any) {
@@ -69,9 +67,9 @@ export async function POST(request: Request) {
 
     // Insert tiket baru — trigger akan cek kuota otomatis
     const ticketResult = await client.query(
-      `INSERT INTO TICKET (ticket_id, ticket_code, torder_id, tcategory_id, created_at)
-       VALUES ($1, $2, $3, $4, NOW())
-       RETURNING ticket_id, ticket_code, torder_id AS order_id, tcategory_id, created_at`,
+      `INSERT INTO TICKET (ticket_id, ticket_code, torder_id, tcategory_id)
+       VALUES ($1, $2, $3, $4)
+       RETURNING ticket_id, ticket_code, torder_id AS order_id, tcategory_id`,
       [newTicketId, ticketCode, order_id, tcategory_id]
     );
 
