@@ -13,15 +13,12 @@ async function run() {
   try {
     const res = await pool.query(`
       SELECT 
-        t.ticket_code, 
-        e.event_title, 
-        e.organizer_id, 
-        org.user_id AS organizer_user_id 
-      FROM TICKET t 
-      JOIN TICKET_CATEGORY tc ON tc.category_id = t.tcategory_id 
-      JOIN EVENT e ON e.event_id = tc.tevent_id 
-      LEFT JOIN ORGANIZER org ON org.organizer_id = e.organizer_id 
-      WHERE t.ticket_code LIKE 'TKTTK-%'
+        org.organizer_id, 
+        org.organizer_name, 
+        org.user_id,
+        ua.username
+      FROM ORGANIZER org
+      LEFT JOIN USER_ACCOUNT ua ON ua.user_id = org.user_id
     `);
     console.log(JSON.stringify(res.rows, null, 2));
   } catch (err) {

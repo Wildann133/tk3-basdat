@@ -41,12 +41,12 @@ export async function GET() {
         v.venue_name,
         org.user_id AS organizer_user_id
       FROM TICKET t
-      JOIN TICKET_CATEGORY tc ON tc.category_id = t.tcategory_id
-      JOIN EVENT e ON e.event_id = tc.tevent_id
-      JOIN ORGANIZER org ON org.organizer_id = e.organizer_id
-      JOIN VENUE v ON v.venue_id = e.venue_id
-      JOIN "ORDER" o ON o.order_id = t.torder_id
-      JOIN CUSTOMER c ON c.customer_id = o.customer_id
+      LEFT JOIN TICKET_CATEGORY tc ON tc.category_id = t.tcategory_id
+      LEFT JOIN EVENT e ON e.event_id = tc.tevent_id
+      LEFT JOIN ORGANIZER org ON org.organizer_id = e.organizer_id
+      LEFT JOIN VENUE v ON v.venue_id = e.venue_id
+      LEFT JOIN "ORDER" o ON o.order_id = t.torder_id
+      LEFT JOIN CUSTOMER c ON c.customer_id = o.customer_id
       LEFT JOIN HAS_RELATIONSHIP hr ON hr.ticket_id = t.ticket_id
       LEFT JOIN SEAT s ON s.seat_id = hr.seat_id
       ORDER BY o.order_date DESC

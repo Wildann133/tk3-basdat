@@ -66,9 +66,10 @@ export default function TicketTable({ role, userId }: { role?: string; userId?: 
   /* ── fetch tickets ── */
   const fetchTickets = useCallback(async () => {
     try {
-      const res = await fetch("/api/tickets");
+      const res = await fetch("/api/tickets", { cache: "no-store" });
       if (!res.ok) throw new Error("Gagal memuat tiket");
       const data: TicketFromAPI[] = await res.json();
+      console.log("Fetched tickets:", data.length, "User ID:", userId, "Role:", role);
       setTickets(data);
     } catch (err) {
       console.error(err);
@@ -118,14 +119,18 @@ export default function TicketTable({ role, userId }: { role?: string; userId?: 
   const filtered = tickets
     .filter((t) => {
       // Role-based filtering for Organizer
-      if (isOrganizer && t.organizer_user_id !== userId) return false;
+      if (isOrganizer && userId) {
+        const tOrgId = String(t.organizer_user_id || "").toLowerCase().trim();
+        const curUserId = String(userId).toLowerCase().trim();
+        if (tOrgId !== curUserId) return false;
+      }
       
       const q = search.toLowerCase();
       return (
-        t.ticket_code.toLowerCase().includes(q) ||
-        t.order_id.toLowerCase().includes(q) ||
-        t.customer_name.toLowerCase().includes(q) ||
-        t.event_title.toLowerCase().includes(q)
+        (t.ticket_code?.toLowerCase().includes(q) ?? false) ||
+        (t.order_id?.toLowerCase().includes(q) ?? false) ||
+        (t.customer_name?.toLowerCase().includes(q) ?? false) ||
+        (t.event_title?.toLowerCase().includes(q) ?? false)
       );
     });
 
