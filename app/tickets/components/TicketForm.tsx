@@ -1,35 +1,48 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import type { TicketRow } from "./TicketTable";
-import {
-  ORDERS,
-  CUSTOMERS,
-  EVENTS,
-  TICKET_CATEGORIES,
-  VENUES,
-  SEATS,
-  HAS_RELATIONSHIP,
-} from "@/lib/dummyData";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
-/* ── helpers ── */
-const generateTicketCode = () => {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let code = "TKTTK-";
-  for (let i = 0; i < 5; i++) code += chars[Math.floor(Math.random() * chars.length)];
-  return code;
+/* ── types ── */
+type OrderOption = {
+  order_id: string;
+  customer_name: string;
+  event_title: string;
+  event_id: string;
+  venue_id: string;
 };
 
-const generateTicketId = () => `tkt_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`;
+type CategoryOption = {
+  id: string;
+  name: string;
+  quota: number;
+  price: number;
+  event_id: string;
+  ticket_count?: number;
+};
+
+type SeatOption = {
+  seat_id: string;
+  section: string;
+  row: string;
+  number: number;
+  venue_id: string;
+  is_assigned: boolean;
+};
+
+type VenueOption = {
+  venue_id: string;
+  venue_name: string;
+  seating_type: string;
+};
 
 /* ── props ── */
 interface TicketFormProps {
-  onSave: (row: TicketRow) => void;
-  existingTickets: TicketRow[];
+  onSave: () => void;
 }
 
-export default function TicketForm({ onSave, existingTickets }: TicketFormProps) {
+export default function TicketForm({ onSave }: TicketFormProps) {
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   /* form state */
   const [selectedOrderId, setSelectedOrderId] = useState("");
@@ -37,65 +50,107 @@ export default function TicketForm({ onSave, existingTickets }: TicketFormProps)
   const [selectedSeatId, setSelectedSeatId] = useState("");
   const [error, setError] = useState("");
 
-  /* ── derived: event from selected order ── */
-  const selectedOrder = ORDERS.find((o) => o.order_id === selectedOrderId);
-  const selectedEvent = selectedOrder
-    ? EVENTS.find((e) => e.event_id === selectedOrder.event_id)
-    : null;
+  /* data from API */
+  const [orders, setOrders] = useState<OrderOption[]>([]);
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [seats, setSeats] = useState<SeatOption[]>([]);
+  const [venues, setVenues] = useState<VenueOption[]>([]);
+
+  /* ── fetch orders ── */
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await fetch("/api/tickets/orders");
+      if (!res.ok) return;
+      const data = await res.json();
+      setOrders(data);
+    } catch (err) {
+      console.error("Gagal memuat orders:", err);
+    }
+  }, []);
+
+  /* ── fetch categories ── */
+  const fetchCategories = useCallback(async () => {
+    try {
+      const res = await fetch("/api/ticket-categories");
+      if (!res.ok) return;
+      const data = await res.json();
+      setCategories(data);
+    } catch (err) {
+      console.error("Gagal memuat categories:", err);
+    }
+  }, []);
+
+  /* ── fetch seats ── */
+  const fetchSeats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/seats");
+      if (!res.ok) return;
+      const data = await res.json();
+      setSeats(data);
+    } catch (err) {
+      console.error("Gagal memuat seats:", err);
+    }
+  }, []);
+
+  /* ── fetch venues ── */
+  const fetchVenues = useCallback(async () => {
+    try {
+      const res = await fetch("/api/venues");
+      if (!res.ok) return;
+      const data = await res.json();
+      setVenues(data);
+    } catch (err) {
+      console.error("Gagal memuat venues:", err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchOrders();
+    fetchCategories();
+    fetchSeats();
+    fetchVenues();
+  }, [fetchOrders, fetchCategories, fetchSeats, fetchVenues]);
+
+  /* ── derived: selected order → event ── */
+  const selectedOrder = orders.find((o) => o.order_id === selectedOrderId);
 
   /* ── derived: venue from event ── */
-  const selectedVenue = selectedEvent
-    ? VENUES.find((v) => v.venue_id === selectedEvent.venue_id)
+  const selectedVenue = selectedOrder
+    ? venues.find((v) => v.venue_id === selectedOrder.venue_id)
     : null;
 
   const isReservedSeating = selectedVenue?.seating_type === "reserved seating";
 
   /* ── ticket categories filtered by event ── */
   const availableCategories = useMemo(() => {
-    if (!selectedEvent) return [];
-    return TICKET_CATEGORIES.filter((tc) => tc.event_id === selectedEvent.event_id);
-  }, [selectedEvent]);
+    if (!selectedOrder) return [];
+    return categories.filter((tc) => tc.event_id === selectedOrder.event_id);
+  }, [selectedOrder, categories]);
 
   /* ── available seats: venue seats minus already-assigned seats ── */
   const availableSeats = useMemo(() => {
     if (!selectedVenue || !isReservedSeating) return [];
-
-    // all seats for this venue
-    const venueSeats = SEATS.filter((s) => s.venue_id === selectedVenue.venue_id);
-
-    // seats already taken (from initial data + locally-created tickets)
-    const takenSeatIds = new Set<string>();
-
-    // from initial data
-    HAS_RELATIONSHIP.forEach((r) => takenSeatIds.add(r.seat_id));
-
-    // from locally-created tickets in current session
-    existingTickets.forEach((t) => {
-      if (t.seat_id) takenSeatIds.add(t.seat_id);
-    });
-
-    return venueSeats.filter((s) => !takenSeatIds.has(s.seat_id));
-  }, [selectedVenue, isReservedSeating, existingTickets]);
+    return seats.filter(
+      (s) => s.venue_id === selectedVenue.venue_id && !s.is_assigned
+    );
+  }, [selectedVenue, isReservedSeating, seats]);
 
   /* ── order dropdown labels ── */
   const orderOptions = useMemo(() => {
-    return ORDERS.map((ord) => {
-      const cust = CUSTOMERS.find((c) => c.customer_id === ord.customer_id);
-      const ev = EVENTS.find((e) => e.event_id === ord.event_id);
-      return {
-        value: ord.order_id,
-        label: `${ord.order_id} — ${cust?.full_name ?? "?"} — ${ev?.event_title ?? "?"}`,
-      };
-    });
-  }, []);
+    return orders.map((ord) => ({
+      value: ord.order_id,
+      label: `${ord.order_id} — ${ord.customer_name ?? "?"} — ${ord.event_title ?? "?"}`,
+    }));
+  }, [orders]);
 
   /* ── category dropdown labels ── */
   const categoryOptions = useMemo(() => {
     return availableCategories.map((tc) => {
-      const isFull = tc.used >= tc.quota;
+      const used = tc.ticket_count ?? 0;
+      const isFull = used >= tc.quota;
       return {
-        value: tc.tcategory_id,
-        label: `${tc.category_name} — Rp ${tc.price.toLocaleString("id-ID")} (${tc.used}/${tc.quota})`,
+        value: tc.id,
+        label: `${tc.name} — Rp ${Number(tc.price).toLocaleString("id-ID")} (${used}/${tc.quota})`,
         disabled: isFull,
       };
     });
@@ -115,11 +170,15 @@ export default function TicketForm({ onSave, existingTickets }: TicketFormProps)
     setSelectedCategoryId("");
     setSelectedSeatId("");
     setError("");
+    // Refresh data saat buka modal
+    fetchOrders();
+    fetchCategories();
+    fetchSeats();
     setOpen(true);
   };
 
   /* ── submit ── */
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!selectedOrderId) {
       setError("Pilih Order terlebih dahulu.");
       return;
@@ -129,18 +188,33 @@ export default function TicketForm({ onSave, existingTickets }: TicketFormProps)
       return;
     }
 
-    const newTicket: TicketRow = {
-      ticket_id: generateTicketId(),
-      ticket_code: generateTicketCode(),
-      order_id: selectedOrderId,
-      tcategory_id: selectedCategoryId,
-      seat_id: selectedSeatId || undefined,
-      created_at: new Date().toISOString(),
-    };
-
-    onSave(newTicket);
-    setOpen(false);
+    setSaving(true);
     setError("");
+
+    try {
+      const res = await fetch("/api/tickets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          order_id: selectedOrderId,
+          tcategory_id: selectedCategoryId,
+          seat_id: selectedSeatId || null,
+        }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Gagal membuat tiket");
+      }
+
+      setOpen(false);
+      setError("");
+      onSave(); // Refresh parent table
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   /* ── reset category + seat when order changes ── */
@@ -260,15 +334,17 @@ export default function TicketForm({ onSave, existingTickets }: TicketFormProps)
               <div className="flex gap-2.5 mt-6">
                 <button
                   onClick={() => setOpen(false)}
+                  disabled={saving}
                   className="flex-1 py-2.5 border-2 border-black bg-white text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-gray-100 hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="flex-1 py-2.5 border-2 border-black bg-[#ffdb33] text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#ffcc00] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
+                  disabled={saving}
+                  className="flex-1 py-2.5 border-2 border-black bg-[#ffdb33] text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#ffcc00] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer disabled:opacity-50"
                 >
-                  Buat Tiket
+                  {saving ? "Membuat..." : "Buat Tiket"}
                 </button>
               </div>
             </div>

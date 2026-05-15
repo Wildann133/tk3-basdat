@@ -13,6 +13,7 @@ interface SeatFormProps {
 export default function SeatForm({ seat, onSave, venues }: SeatFormProps) {
   const isEdit = !!seat;
   const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   /* form state */
   const [venueId, setVenueId] = useState(seat?.venue_id ?? "");
@@ -30,22 +31,28 @@ export default function SeatForm({ seat, onSave, venues }: SeatFormProps) {
     setOpen(true);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!venueId) { setError("Pilih venue terlebih dahulu."); return; }
     if (!section.trim()) { setError("Section tidak boleh kosong."); return; }
     if (!row.trim()) { setError("Baris tidak boleh kosong."); return; }
     if (number <= 0) { setError("No. Kursi harus lebih dari 0."); return; }
 
-    onSave({
-      seat_id: seat?.seat_id ?? `seat_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 5)}`,
-      section: section.trim(),
-      row: row.trim(),
-      number,
-      venue_id: venueId,
-    });
-
-    setOpen(false);
-    setError("");
+    setSaving(true);
+    try {
+      await onSave({
+        seat_id: seat?.seat_id ?? "",
+        section: section.trim(),
+        row: row.trim(),
+        number,
+        venue_id: venueId,
+      });
+      setOpen(false);
+      setError("");
+    } catch (err: any) {
+      setError(err.message || "Gagal menyimpan kursi.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -146,15 +153,17 @@ export default function SeatForm({ seat, onSave, venues }: SeatFormProps) {
               <div className="flex gap-2.5 mt-6">
                 <button
                   onClick={() => setOpen(false)}
+                  disabled={saving}
                   className="flex-1 py-2.5 border-2 border-black bg-white text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-gray-100 hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   onClick={handleSubmit}
-                  className="flex-1 py-2.5 border-2 border-black bg-[#ffdb33] text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#ffcc00] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
+                  disabled={saving}
+                  className="flex-1 py-2.5 border-2 border-black bg-[#ffdb33] text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#ffcc00] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer disabled:opacity-50"
                 >
-                  {isEdit ? "Simpan" : "Tambah"}
+                  {saving ? "Menyimpan..." : isEdit ? "Simpan" : "Tambah"}
                 </button>
               </div>
             </div>

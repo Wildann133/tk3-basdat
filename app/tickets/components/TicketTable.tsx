@@ -1,17 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import TicketForm from "./TicketForm";
-import {
-  TICKETS,
-  ORDERS,
-  CUSTOMERS,
-  EVENTS,
-  TICKET_CATEGORIES,
-  VENUES,
-  SEATS,
-  HAS_RELATIONSHIP,
-} from "@/lib/dummyData";
 
 /* ── local types ── */
 export type TicketRow = {
@@ -23,62 +13,85 @@ export type TicketRow = {
   created_at: string;
 };
 
-/* ── helpers ── */
-const getCustomerName = (orderId: string) => {
-  const order = ORDERS.find((o) => o.order_id === orderId);
-  if (!order) return "—";
-  const cust = CUSTOMERS.find((c) => c.customer_id === order.customer_id);
-  return cust?.full_name ?? "—";
+type TicketFromAPI = {
+  ticket_id: string;
+  ticket_code: string;
+  order_id: string;
+  tcategory_id: string;
+  created_at: string;
+  category_name: string;
+  category_price: number;
+  event_title: string;
+  event_id: string;
+  customer_name: string;
+  seat_id: string | null;
+  seat_section: string | null;
+  seat_row: string | null;
+  seat_number: number | null;
 };
-
-const getEventTitle = (orderId: string) => {
-  const order = ORDERS.find((o) => o.order_id === orderId);
-  if (!order) return "—";
-  const ev = EVENTS.find((e) => e.event_id === order.event_id);
-  return ev?.event_title ?? "—";
-};
-
-const getCategoryLabel = (tcId: string) => {
-  const tc = TICKET_CATEGORIES.find((t) => t.tcategory_id === tcId);
-  if (!tc) return "—";
-  return `${tc.category_name} — Rp ${tc.price.toLocaleString("id-ID")}`;
-};
-
-const getSeatLabel = (ticketId: string) => {
-  const rel = HAS_RELATIONSHIP.find((r) => r.ticket_id === ticketId);
-  if (!rel) return null;
-  const seat = SEATS.find((s) => s.seat_id === rel.seat_id);
-  if (!seat) return null;
-  return `Section ${seat.section}, Baris ${seat.row}, No. ${seat.number}`;
-};
-
-/* ── build initial rows with seat ── */
-const buildInitialRows = (): TicketRow[] =>
-  TICKETS.map((t) => {
-    const rel = HAS_RELATIONSHIP.find((r) => r.ticket_id === t.ticket_id);
-    return { ...t, seat_id: rel?.seat_id };
-  });
 
 /* ──────────────────────────────────────────────────────────── */
 export default function TicketTable({ role }: { role?: string }) {
   const canCreate = role === "admin" || role === "organizer";
   const canDelete = role === "admin";
 
-  const [tickets, setTickets] = useState<TicketRow[]>(buildInitialRows);
+  const [tickets, setTickets] = useState<TicketFromAPI[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
+
+  /* ── fetch tickets ── */
+  const fetchTickets = useCallback(async () => {
+    try {
+      const res = await fetch("/api/tickets");
+      if (!res.ok) throw new Error("Gagal memuat tiket");
+      const data: TicketFromAPI[] = await res.json();
+      setTickets(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
 
   /* ── handlers ── */
-  const handleDelete = (id: string) => {
-    setTickets((prev) => prev.filter((t) => t.ticket_id !== id));
+  const handleDelete = async (id: string) => {
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/tickets?id=${id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Gagal menghapus tiket");
+      }
+      setDeleteId(null);
+      await fetchTickets();
+    } catch (err: any) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
-  const handleSave = (row: TicketRow) => {
-    setTickets((prev) => {
-      const exists = prev.find((t) => t.ticket_id === row.ticket_id);
-      if (exists) return prev.map((t) => (t.ticket_id === row.ticket_id ? row : t));
-      return [row, ...prev];
-    });
+  const handleSave = async () => {
+    // Refresh dari DB setelah tiket baru dibuat
+    await fetchTickets();
+  };
+
+  /* ── helpers ── */
+  const getSeatLabel = (tkt: TicketFromAPI) => {
+    if (!tkt.seat_id) return null;
+    return `Section ${tkt.seat_section}, Baris ${tkt.seat_row}, No. ${tkt.seat_number}`;
+  };
+
+  const getCategoryLabel = (tkt: TicketFromAPI) => {
+    return `${tkt.category_name} — Rp ${Number(tkt.category_price).toLocaleString("id-ID")}`;
   };
 
   /* ── filter ── */
@@ -88,13 +101,22 @@ export default function TicketTable({ role }: { role?: string }) {
       return (
         t.ticket_code.toLowerCase().includes(q) ||
         t.order_id.toLowerCase().includes(q) ||
-        getCustomerName(t.order_id).toLowerCase().includes(q) ||
-        getEventTitle(t.order_id).toLowerCase().includes(q)
+        t.customer_name.toLowerCase().includes(q) ||
+        t.event_title.toLowerCase().includes(q)
       );
-    })
-    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    });
 
   const ticketToDelete = tickets.find((t) => t.ticket_id === deleteId);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="font-head text-sm tracking-widest uppercase text-gray-500 animate-pulse">
+          Memuat data tiket...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -122,7 +144,7 @@ export default function TicketTable({ role }: { role?: string }) {
             {filtered.length} tiket
           </span>
 
-          {canCreate && <TicketForm onSave={handleSave} existingTickets={tickets} />}
+          {canCreate && <TicketForm onSave={handleSave} />}
         </div>
       </div>
 
@@ -182,24 +204,24 @@ export default function TicketTable({ role }: { role?: string }) {
 
                 {/* Customer */}
                 <td className="px-5 py-3.5 font-semibold text-black">
-                  {getCustomerName(tkt.order_id)}
+                  {tkt.customer_name}
                 </td>
 
                 {/* Event */}
                 <td className="px-5 py-3.5">
                   <span className="font-head text-[0.6rem] uppercase bg-[#ffdb33] border-2 border-black px-2.5 py-1">
-                    {getEventTitle(tkt.order_id)}
+                    {tkt.event_title}
                   </span>
                 </td>
 
                 {/* Kategori */}
                 <td className="px-5 py-3.5 text-black text-xs">
-                  {getCategoryLabel(tkt.tcategory_id)}
+                  {getCategoryLabel(tkt)}
                 </td>
 
                 {/* Kursi */}
                 <td className="px-5 py-3.5 text-xs text-black">
-                  {getSeatLabel(tkt.ticket_id) ?? (
+                  {getSeatLabel(tkt) ?? (
                     <span className="text-gray-400 italic">—</span>
                   )}
                 </td>
@@ -209,7 +231,7 @@ export default function TicketTable({ role }: { role?: string }) {
                   <td className="px-5 py-3.5">
                     <div className="flex items-center justify-center gap-2">
                       <button
-                        onClick={() => setDeleteId(tkt.ticket_id)}
+                        onClick={() => { setDeleteId(tkt.ticket_id); setDeleteError(""); }}
                         className="font-head text-[0.72rem] px-3 py-1.5 border-2 border-[#e63946] bg-white text-[#e63946] shadow-[2px_2px_0_0_#e63946] hover:bg-[#e63946] hover:text-white transition-all duration-100 cursor-pointer"
                       >
                         Hapus
@@ -248,21 +270,26 @@ export default function TicketTable({ role }: { role?: string }) {
                 {ticketToDelete?.ticket_code}
               </p>
 
+              {deleteError && (
+                <p className="font-head text-[0.65rem] tracking-wide text-[#e63946] border-2 border-[#e63946] px-3 py-2 mb-4 shadow-[2px_2px_0_0_#e63946]">
+                  {deleteError}
+                </p>
+              )}
+
               <div className="flex gap-2.5">
                 <button
                   onClick={() => setDeleteId(null)}
+                  disabled={deleteLoading}
                   className="flex-1 py-2.5 border-2 border-black bg-white text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-gray-100 hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
-                  onClick={() => {
-                    handleDelete(deleteId);
-                    setDeleteId(null);
-                  }}
-                  className="flex-1 py-2.5 border-2 border-black bg-[#e63946] text-white font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#c62f3b] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
+                  onClick={() => handleDelete(deleteId)}
+                  disabled={deleteLoading}
+                  className="flex-1 py-2.5 border-2 border-black bg-[#e63946] text-white font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#c62f3b] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer disabled:opacity-50"
                 >
-                  Ya, Hapus
+                  {deleteLoading ? "Menghapus..." : "Ya, Hapus"}
                 </button>
               </div>
             </div>

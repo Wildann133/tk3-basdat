@@ -16,7 +16,8 @@ export async function GET() {
         tc.quota, 
         tc.price, 
         e.event_title AS event_name,
-        tc.tevent_id AS event_id
+        tc.tevent_id AS event_id,
+        (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count
       FROM TICKET_CATEGORY tc
       JOIN EVENT e ON tc.tevent_id = e.event_id
       ORDER BY e.event_title ASC
