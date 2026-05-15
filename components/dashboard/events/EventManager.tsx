@@ -41,6 +41,12 @@ type OrganizerOption = {
   organizer_name: string;
 };
 
+type ArtistOption = {
+  id: string;
+  name: string;
+  genre?: string;
+};
+
 type EventFormState = {
   event_title: string;
   event_date: string;
@@ -73,6 +79,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
   const [events, setEvents] = useState<EventData[]>([]);
   const [venues, setVenues] = useState<VenueOption[]>([]);
   const [organizers, setOrganizers] = useState<OrganizerOption[]>([]);
+  const [artistOptions, setArtistOptions] = useState<ArtistOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -81,7 +88,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
   const [editingEvent, setEditingEvent] = useState<EventData | null>(null);
   const [eventToDelete, setEventToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<EventFormState>(initialFormState);
-  const [artistInput, setArtistInput] = useState("");
+  const [selectedArtistId, setSelectedArtistId] = useState("");
 
   const userRole = role.toLowerCase();
   const canManage = userRole === "admin" || userRole === "organizer";
@@ -91,13 +98,15 @@ export default function EventManager({ role }: { role: string; userId?: string }
     setLoading(true);
     setError("");
     try {
-      const [venueResult, eventResult] = await Promise.all([
+      const [venueResult, eventResult, artistResult] = await Promise.all([
         fetchJson<VenueOption[]>("/api/venues"),
         fetchJson<EventData[]>(userRole === "organizer" ? "/api/events?mine=1" : "/api/events"),
+        fetchJson<ArtistOption[]>("/api/artists"),
       ]);
 
       setVenues(venueResult);
       setEvents(eventResult);
+      setArtistOptions(artistResult);
 
       if (canAssignOrganizer) {
         const organizerResult = await fetchJson<OrganizerOption[]>("/api/organizers");
@@ -127,7 +136,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
       venue_id: venues[0]?.venue_id || "",
       organizer_id: organizers[0]?.organizer_id || "",
     });
-    setArtistInput("");
+    setSelectedArtistId("");
     setIsModalOpen(true);
   };
 
@@ -155,7 +164,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
       description: evt.description || "",
       image_url: evt.image_url || "",
     });
-    setArtistInput("");
+    setSelectedArtistId("");
     setIsModalOpen(true);
   };
 
@@ -185,6 +194,16 @@ export default function EventManager({ role }: { role: string; userId?: string }
         event_title: formData.event_title.trim(),
         event_datetime: combinedDateTime,
         venue_id: formData.venue_id,
+        artists: formData.artists
+          .map((artist) => artist.trim())
+          .filter(Boolean),
+        ticket_categories: formData.ticket_categories
+          .map((category) => ({
+            name: category.name.trim(),
+            price: Number(category.price),
+            capacity: Number(category.capacity),
+          }))
+          .filter((category) => category.name && Number.isFinite(category.price) && Number.isFinite(category.capacity)),
       };
 
       if (canAssignOrganizer) {
@@ -231,14 +250,13 @@ export default function EventManager({ role }: { role: string; userId?: string }
     }
   };
 
-  const handleAddArtist = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && artistInput.trim() !== "") {
-      e.preventDefault();
-      if (!formData.artists.includes(artistInput.trim())) {
-        setFormData({ ...formData, artists: [...formData.artists, artistInput.trim()] });
-      }
-      setArtistInput("");
+  const handleAddArtist = () => {
+    const selectedArtist = artistOptions.find((artist) => artist.id === selectedArtistId);
+    if (!selectedArtist) return;
+    if (!formData.artists.includes(selectedArtist.name)) {
+      setFormData({ ...formData, artists: [...formData.artists, selectedArtist.name] });
     }
+    setSelectedArtistId("");
   };
 
   const handleRemoveArtist = (artist: string) => {
