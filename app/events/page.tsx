@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { EVENTS, VENUES, getTicketCategoriesByEventId } from "@/lib/dummyData";
+import { fetchJson } from "@/lib/api";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { Input } from "@/components/retroui/Input";
@@ -16,39 +16,67 @@ type TicketCategory = {
   capacity: number;
 };
 
-// Extend the Event type for the frontend to include required mock fields
-type EventData = typeof EVENTS[0] & {
+type EventData = {
+  id: string;
+  event_id: string;
+  title: string;
+  event_title: string;
+  event_datetime: string;
+  venue_id: string;
+  organizer_id: string;
   artists: string[];
   ticket_categories: TicketCategory[];
 };
 
-// Hydrate dummy events with mock artists and tickets since dummyData.ts is minimal
-const hydratedEvents: EventData[] = EVENTS.map((event, index) => {
-  const isOdd = index % 2 !== 0;
-  return {
-    ...event,
-    artists: isOdd ? ["Tulus", "Maliq & D'Essentials"] : ["Noah", "Dewa 19", "Raisa"],
-    ticket_categories: getTicketCategoriesByEventId(event.event_id),
-  };
-});
+type VenueData = {
+  id: string;
+  venue_id: string;
+  name: string;
+  venue_name: string;
+};
 
 export default function EventsPage() {
   const router = useRouter();
+  const [events, setEvents] = useState<EventData[]>([]);
+  const [venues, setVenues] = useState<VenueData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [venueFilter, setVenueFilter] = useState("ALL");
   const [artistFilter, setArtistFilter] = useState("ALL");
 
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const [eventRows, venueRows] = await Promise.all([
+          fetchJson<EventData[]>("/api/events"),
+          fetchJson<VenueData[]>("/api/venues"),
+        ]);
+        setEvents(eventRows);
+        setVenues(venueRows);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Gagal memuat daftar event.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadData();
+  }, []);
+
   // Collect unique artists for the filter dropdown
   const allArtists = useMemo(() => {
     const artistSet = new Set<string>();
-    hydratedEvents.forEach((event) => {
+    events.forEach((event) => {
       event.artists.forEach((artist) => artistSet.add(artist));
     });
     return Array.from(artistSet).sort();
-  }, []);
+  }, [events]);
 
   const filteredEvents = useMemo(() => {
-    return hydratedEvents.filter((event) => {
+    return events.filter((event) => {
       const matchesSearch =
         event.event_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         event.artists.some((artist) =>
@@ -60,10 +88,10 @@ export default function EventsPage() {
 
       return matchesSearch && matchesVenue && matchesArtist;
     });
-  }, [searchQuery, venueFilter, artistFilter]);
+  }, [events, searchQuery, venueFilter, artistFilter]);
 
   const getVenueName = (venueId: string) => {
-    const venue = VENUES.find((v) => v.venue_id === venueId);
+    const venue = venues.find((v) => v.venue_id === venueId);
     return venue ? venue.venue_name : "Unknown Venue";
   };
 
@@ -113,7 +141,7 @@ export default function EventsPage() {
               className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold shadow-[2px_2px_0_0_#000] outline-hidden focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all cursor-pointer"
             >
               <option value="ALL">Semua Venue</option>
-              {VENUES.map((venue) => (
+              {venues.map((venue) => (
                 <option key={venue.venue_id} value={venue.venue_id}>
                   {venue.venue_name}
                 </option>
@@ -139,7 +167,16 @@ export default function EventsPage() {
       </Card>
 
       {/* Events Carousel */}
-      {filteredEvents.length === 0 ? (
+      {loading ? (
+        <Card className="p-12 text-center bg-gray-100 border-4 border-black shadow-[8px_8px_0_0_#000]">
+          <h2 className="text-2xl font-black font-head">Memuat acara...</h2>
+        </Card>
+      ) : error ? (
+        <Card className="p-12 text-center bg-red-100 border-4 border-black shadow-[8px_8px_0_0_#000]">
+          <h2 className="text-2xl font-black font-head">Gagal memuat acara</h2>
+          <p className="font-bold mt-2">{error}</p>
+        </Card>
+      ) : filteredEvents.length === 0 ? (
         <Card className="p-12 text-center bg-gray-100 border-4 border-black shadow-[8px_8px_0_0_#000]">
           <h2 className="text-2xl font-black font-head">Tidak ada acara yang ditemukan</h2>
           <p className="font-bold mt-2">Coba sesuaikan filter pencarian Anda.</p>
