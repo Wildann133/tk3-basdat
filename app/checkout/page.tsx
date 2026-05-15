@@ -1,12 +1,7 @@
 import { redirect } from "next/navigation";
 import CheckoutClient from "@/components/orders/CheckoutClient";
-import {
-  EVENTS,
-  VENUES,
-  getCustomerByUserId,
-  getTicketCategoriesByEventId,
-} from "@/lib/dummyData";
 import { getSession } from "@/lib/auth";
+import { getCheckoutPageData } from "@/lib/orders";
 
 type CheckoutPageProps = {
   searchParams: Promise<{
@@ -24,34 +19,23 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
     redirect("/dashboard");
   }
 
-  const customer = getCustomerByUserId(session.user_id);
-  if (!customer) {
-    redirect("/dashboard");
-  }
-
   const resolvedSearchParams = await searchParams;
   const eventId = resolvedSearchParams.eventId;
   if (!eventId) {
     redirect("/events");
   }
 
-  const event = EVENTS.find((eventItem) => eventItem.event_id === eventId);
-  if (!event) {
-    redirect("/events");
-  }
-
-  const venue = VENUES.find((venueItem) => venueItem.venue_id === event.venue_id);
-  const ticketCategories = getTicketCategoriesByEventId(event.event_id);
-  if (!venue || ticketCategories.length === 0) {
+  const checkoutData = await getCheckoutPageData(session.user_id, eventId);
+  if (!checkoutData) {
     redirect("/events");
   }
 
   return (
     <CheckoutClient
-      event={event}
-      venue={venue}
-      ticketCategories={ticketCategories}
-      customerId={customer.customer_id}
+      event={checkoutData.event}
+      venue={checkoutData.venue}
+      ticketCategories={checkoutData.ticketCategories}
+      promotions={checkoutData.promotions}
     />
   );
 }

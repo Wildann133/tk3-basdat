@@ -1,17 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { Dialog } from "@/components/retroui/Dialog";
-import {
-  deleteOrderById,
-  getAllOrders,
-  getOrdersByCustomerId,
-  getOrdersByOrganizerId,
-  updateOrderById,
-} from "@/lib/orderStore";
-import { Order, PaymentStatus } from "@/lib/types/order";
+import { fetchJson } from "@/lib/api";
+import { PaymentStatus, PersistedOrder } from "@/lib/types/order";
 
 type OrdersClientProps = {
   role: "admin" | "organizer" | "customer";
@@ -26,32 +20,31 @@ const formatRupiah = (value: number) =>
     minimumFractionDigits: 0,
   }).format(value);
 
-const statusOptions: Array<"All" | PaymentStatus> = [
-  "All",
-  "Paid",
-  "Pending",
-  "Cancelled",
+/** Display labels for DB/API values `Paid` | `Pending` | `Cancelled`. */
+const paymentStatusLabel: Record<PaymentStatus, string> = {
+  Paid: "Lunas",
+  Pending: "Pending",
+  Cancelled: "Dibatalkan",
+};
+
+const filterStatusOptions: Array<{ value: "All" | PaymentStatus; label: string }> = [
+  { value: "All", label: "Semua" },
+  { value: "Paid", label: "Lunas" },
+  { value: "Pending", label: "Pending" },
+  { value: "Cancelled", label: "Dibatalkan" },
 ];
 
-function getBaseOrders(props: OrdersClientProps) {
-  if (props.role === "admin") return getAllOrders();
-  if (props.role === "organizer" && props.organizerId) {
-    return getOrdersByOrganizerId(props.organizerId);
-  }
-  if (props.role === "customer" && props.customerId) {
-    return getOrdersByCustomerId(props.customerId);
-  }
-  return [];
-}
-
 export default function OrdersClient(props: OrdersClientProps) {
-  const [orders, setOrders] = useState<Order[]>(() => getBaseOrders(props));
+  const [orders, setOrders] = useState<PersistedOrder[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | PaymentStatus>("All");
-  const [selectedOrderForUpdate, setSelectedOrderForUpdate] = useState<Order | null>(null);
-  const [selectedOrderForDelete, setSelectedOrderForDelete] = useState<Order | null>(null);
+  const [selectedOrderForUpdate, setSelectedOrderForUpdate] = useState<PersistedOrder | null>(null);
+  const [selectedOrderForDelete, setSelectedOrderForDelete] = useState<PersistedOrder | null>(null);
   const [updateStatusValue, setUpdateStatusValue] = useState<PaymentStatus>("Pending");
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   const isAdmin = props.role === "admin";
   const heading = isAdmin
@@ -59,6 +52,33 @@ export default function OrdersClient(props: OrdersClientProps) {
     : props.role === "organizer"
       ? "Order Event Saya"
       : "Pesanan Saya";
+
+  useEffect(() => {
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const result = await fetchJson<PersistedOrder[]>("/api/orders");
+        if (!cancelled) {
+          setOrders(result);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setErrorMessage(
+            error instanceof Error ? error.message : "Gagal memuat daftar order."
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filteredOrders = useMemo(() => {
     return orders
@@ -84,62 +104,93 @@ export default function OrdersClient(props: OrdersClientProps) {
     const pendingOrders = filteredOrders.filter(
       (order) => order.payment_status === "Pending"
     ).length;
-    const totalRevenue = filteredOrders.reduce(
-      (accumulator, order) => accumulator + order.total_amount,
-      0
-    );
+    // Align with organizer dashboard revenue: only Paid orders count toward Total Revenue.
+    const totalRevenue =
+      props.role === "admin" || props.role === "organizer"
+        ? filteredOrders
+            .filter((order) => order.payment_status === "Paid")
+            .reduce((accumulator, order) => accumulator + order.total_amount, 0)
+        : 0;
     return { totalOrders, paidOrders, pendingOrders, totalRevenue };
-  }, [filteredOrders]);
+  }, [filteredOrders, props.role]);
 
-  const openUpdateModal = (order: Order) => {
+  const openUpdateModal = (order: PersistedOrder) => {
     setSelectedOrderForUpdate(order);
     setUpdateStatusValue(order.payment_status);
     setSuccessMessage(null);
+    setErrorMessage(null);
   };
 
   const closeUpdateModal = () => {
     setSelectedOrderForUpdate(null);
   };
 
-  const confirmUpdate = () => {
+  const confirmUpdate = async () => {
     if (!selectedOrderForUpdate) return;
-    const updated = updateOrderById(selectedOrderForUpdate.order_id, {
-      payment_status: updateStatusValue,
-    });
-    if (!updated) return;
 
-    setOrders((previousOrders) =>
-      previousOrders.map((order) =>
-        order.order_id === selectedOrderForUpdate.order_id
-          ? { ...order, payment_status: updateStatusValue }
-          : order
-      )
-    );
-    setSuccessMessage("Order berhasil diperbarui.");
-    closeUpdateModal();
+    setActionLoading(true);
+    try {
+      const updated = await fetchJson<PersistedOrder>("/api/orders", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: selectedOrderForUpdate.order_id,
+          payment_status: updateStatusValue,
+        }),
+      });
+
+      setOrders((previousOrders) =>
+        previousOrders.map((order) =>
+          order.order_id === updated.order_id ? updated : order
+        )
+      );
+      setSuccessMessage("Order berhasil diperbarui.");
+      setErrorMessage(null);
+      closeUpdateModal();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Gagal mengupdate order."
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const openDeleteModal = (order: Order) => {
+  const openDeleteModal = (order: PersistedOrder) => {
     setSelectedOrderForDelete(order);
     setSuccessMessage(null);
+    setErrorMessage(null);
   };
 
   const closeDeleteModal = () => {
     setSelectedOrderForDelete(null);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (!selectedOrderForDelete) return;
-    const deleted = deleteOrderById(selectedOrderForDelete.order_id);
-    if (!deleted) return;
 
-    setOrders((previousOrders) =>
-      previousOrders.filter(
-        (order) => order.order_id !== selectedOrderForDelete.order_id
-      )
-    );
-    setSuccessMessage("Order berhasil dihapus.");
-    closeDeleteModal();
+    setActionLoading(true);
+    try {
+      await fetchJson<{ message: string }>(
+        `/api/orders?id=${selectedOrderForDelete.order_id}`,
+        { method: "DELETE" }
+      );
+
+      setOrders((previousOrders) =>
+        previousOrders.filter(
+          (order) => order.order_id !== selectedOrderForDelete.order_id
+        )
+      );
+      setSuccessMessage("Order berhasil dihapus.");
+      setErrorMessage(null);
+      closeDeleteModal();
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Gagal menghapus order."
+      );
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
@@ -156,6 +207,12 @@ export default function OrdersClient(props: OrdersClientProps) {
       {successMessage && (
         <Card className="border-4 border-black shadow-[6px_6px_0_0_#000] bg-[#caffbf]">
           <CardContent className="p-4 font-bold">{successMessage}</CardContent>
+        </Card>
+      )}
+
+      {errorMessage && (
+        <Card className="border-4 border-black shadow-[6px_6px_0_0_#000] bg-red-100">
+          <CardContent className="p-4 font-bold text-red-700">{errorMessage}</CardContent>
         </Card>
       )}
 
@@ -214,9 +271,9 @@ export default function OrdersClient(props: OrdersClientProps) {
               }
               className="h-11 px-3 border-2 border-black bg-white rounded font-bold"
             >
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
+              {filterStatusOptions.map(({ value, label }) => (
+                <option key={value} value={value}>
+                  {label}
                 </option>
               ))}
             </select>
@@ -233,7 +290,7 @@ export default function OrdersClient(props: OrdersClientProps) {
                     Order Date
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Payment Status
+                    Status Pembayaran
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
                     Total Amount
@@ -246,7 +303,16 @@ export default function OrdersClient(props: OrdersClientProps) {
                 </tr>
               </thead>
               <tbody>
-                {filteredOrders.length === 0 ? (
+                {loading ? (
+                  <tr>
+                    <td
+                      className="p-4 text-sm font-bold text-zinc-600"
+                      colSpan={isAdmin ? 5 : 4}
+                    >
+                      Memuat data order...
+                    </td>
+                  </tr>
+                ) : filteredOrders.length === 0 ? (
                   <tr>
                     <td
                       className="p-4 text-sm font-bold text-zinc-600"
@@ -269,7 +335,7 @@ export default function OrdersClient(props: OrdersClientProps) {
                         })}
                       </td>
                       <td className="p-3 text-sm font-bold">
-                        {order.payment_status}
+                        {paymentStatusLabel[order.payment_status]}
                       </td>
                       <td className="p-3 text-sm font-bold">
                         {formatRupiah(order.total_amount)}
@@ -282,14 +348,14 @@ export default function OrdersClient(props: OrdersClientProps) {
                               className="h-9 px-3 font-bold"
                               onClick={() => openUpdateModal(order)}
                             >
-                              Update
+                              Perbarui
                             </Button>
                             <Button
                               type="button"
                               className="h-9 px-3 font-bold bg-red-500 hover:bg-red-600"
                               onClick={() => openDeleteModal(order)}
                             >
-                              Delete
+                              Hapus
                             </Button>
                           </div>
                         </td>
@@ -310,7 +376,7 @@ export default function OrdersClient(props: OrdersClientProps) {
         }}
       >
         <Dialog.Content size="md" className="border-4 border-black">
-          <Dialog.Header className="font-black text-lg">Update Order</Dialog.Header>
+          <Dialog.Header className="font-black text-lg">Perbarui Order</Dialog.Header>
           <div className="p-6 space-y-4">
             <div className="space-y-2">
               <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
@@ -324,7 +390,7 @@ export default function OrdersClient(props: OrdersClientProps) {
             </div>
             <div className="space-y-2">
               <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-                Payment Status
+                Status Pembayaran
               </label>
               <select
                 value={updateStatusValue}
@@ -333,9 +399,9 @@ export default function OrdersClient(props: OrdersClientProps) {
                 }
                 className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold"
               >
-                <option value="Paid">Paid</option>
-                <option value="Pending">Pending</option>
-                <option value="Cancelled">Cancelled</option>
+                <option value="Paid">{paymentStatusLabel.Paid}</option>
+                <option value="Pending">{paymentStatusLabel.Pending}</option>
+                <option value="Cancelled">{paymentStatusLabel.Cancelled}</option>
               </select>
             </div>
           </div>
@@ -344,12 +410,18 @@ export default function OrdersClient(props: OrdersClientProps) {
               type="button"
               variant="outline"
               className="border-2 border-black font-bold"
+              disabled={actionLoading}
               onClick={closeUpdateModal}
             >
-              Cancel
+              Batal
             </Button>
-            <Button type="button" className="font-bold" onClick={confirmUpdate}>
-              Update
+            <Button
+              type="button"
+              className="font-bold"
+              disabled={actionLoading}
+              onClick={confirmUpdate}
+            >
+              {actionLoading ? "Memperbarui..." : "Perbarui"}
             </Button>
           </Dialog.Footer>
         </Dialog.Content>
@@ -379,16 +451,18 @@ export default function OrdersClient(props: OrdersClientProps) {
               type="button"
               variant="outline"
               className="border-2 border-black font-bold"
+              disabled={actionLoading}
               onClick={closeDeleteModal}
             >
-              Cancel
+              Batal
             </Button>
             <Button
               type="button"
               className="font-bold bg-red-500 hover:bg-red-600"
+              disabled={actionLoading}
               onClick={confirmDelete}
             >
-              Delete
+              {actionLoading ? "Menghapus..." : "Hapus"}
             </Button>
           </Dialog.Footer>
         </Dialog.Content>

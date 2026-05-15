@@ -1,30 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { Input } from "@/components/retroui/Input";
+import { fetchJson } from "@/lib/api";
 import {
-  calculateDiscountedTotal,
-  findPromotionByCode,
-} from "@/lib/dummyData";
-import { createOrder } from "@/lib/orderStore";
-import { AppliedPromotion, CheckoutFormState, Order, TicketCategory } from "@/lib/types/order";
+  AppliedPromotion,
+  CheckoutEvent,
+  CheckoutFormState,
+  CheckoutPromotion,
+  CheckoutVenue,
+  Order,
+  TicketCategory,
+} from "@/lib/types/order";
 
 type CheckoutClientProps = {
-  event: {
-    event_id: string;
-    event_title: string;
-    event_datetime: string;
-  };
-  venue: {
-    venue_id: string;
-    venue_name: string;
-    seating_type: string;
-  };
+  event: CheckoutEvent;
+  venue: CheckoutVenue;
   ticketCategories: TicketCategory[];
-  customerId: string;
+  promotions: CheckoutPromotion[];
 };
 
 const formatRupiah = (value: number) =>
@@ -45,7 +41,7 @@ export default function CheckoutClient({
   event,
   venue,
   ticketCategories,
-  customerId,
+  promotions,
 }: CheckoutClientProps) {
   const [formState, setFormState] = useState<CheckoutFormState>({
     ticketCategoryId: "",
@@ -59,6 +55,7 @@ export default function CheckoutClient({
   );
   const [errorMessage, setErrorMessage] = useState("");
   const [successOrder, setSuccessOrder] = useState<Order | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedCategory = useMemo(
     () =>
@@ -69,9 +66,46 @@ export default function CheckoutClient({
   );
 
   const subtotal = selectedCategory ? selectedCategory.price * formState.quantity : 0;
+  const findPromotionByCode = useCallback(
+    (promoCode: string) => {
+      const normalized = promoCode.trim().toLowerCase();
+      if (!normalized) return null;
+      return (
+        promotions.find((promotion) => promotion.promoCode.toLowerCase() === normalized) ?? null
+      );
+    },
+    [promotions]
+  );
+
+  const calculateDiscountedTotal = useCallback(
+    (promoCode?: string) => {
+      const promo = promoCode ? findPromotionByCode(promoCode) : null;
+      if (!promo) {
+        return {
+          promo: null,
+          discountAmount: 0,
+          totalAmount: subtotal,
+        };
+      }
+
+      const discountAmount =
+        promo.discountType === "PERCENTAGE"
+          ? Math.floor((subtotal * promo.discountValue) / 100)
+          : promo.discountValue;
+      const clampedDiscount = Math.min(subtotal, Math.max(0, discountAmount));
+
+      return {
+        promo,
+        discountAmount: clampedDiscount,
+        totalAmount: subtotal - clampedDiscount,
+      };
+    },
+    [findPromotionByCode, subtotal]
+  );
+
   const pricing = useMemo(
-    () => calculateDiscountedTotal({ subtotal, promoCode: appliedPromoCode }),
-    [subtotal, appliedPromoCode]
+    () => calculateDiscountedTotal(appliedPromoCode),
+    [appliedPromoCode, calculateDiscountedTotal]
   );
   const isReservedSeating = venue.seating_type === "reserved seating";
 
@@ -92,20 +126,17 @@ export default function CheckoutClient({
       return;
     }
 
-    const simulatedPricing = calculateDiscountedTotal({
-      subtotal,
-      promoCode: rawCode,
-    });
-    setAppliedPromoCode(promotion.promo_code);
+    const simulatedPricing = calculateDiscountedTotal(rawCode);
+    setAppliedPromoCode(promotion.promoCode);
     setAppliedPromotion({
-      promotionId: promotion.promotion_id,
-      promoCode: promotion.promo_code,
+      promotionId: promotion.promotionId,
+      promoCode: promotion.promoCode,
       discountAmount: simulatedPricing.discountAmount,
     });
     setErrorMessage("");
   };
 
-  const handleSubmit = (eventSubmit: React.FormEvent) => {
+  const handleSubmit = async (eventSubmit: React.FormEvent) => {
     eventSubmit.preventDefault();
 
     if (!formState.ticketCategoryId) {
@@ -133,26 +164,27 @@ export default function CheckoutClient({
       return;
     }
 
-    const newOrder: Order = {
-      order_id: crypto.randomUUID(),
-      order_date: new Date().toISOString(),
-      payment_status: "Pending",
-      total_amount: pricing.totalAmount,
-      customer_id: customerId,
-      event_id: event.event_id,
-      ticket_category_id: selectedCategory.id,
-      ticket_category_name: selectedCategory.name,
-      ticket_price: selectedCategory.price,
-      quantity: formState.quantity,
-      selected_seats: selectedSeats,
-      promo_code: appliedPromotion?.promoCode ?? null,
-      discount_amount: pricing.discountAmount,
-      subtotal_amount: subtotal,
-    };
+    setIsSubmitting(true);
+    try {
+      const newOrder = await fetchJson<Order>("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          event_id: event.event_id,
+          ticket_category_id: selectedCategory.id,
+          quantity: formState.quantity,
+          seats_input: formState.seatsInput,
+          promo_code: appliedPromotion?.promoCode ?? "",
+        }),
+      });
 
-    createOrder(newOrder);
-    setSuccessOrder(newOrder);
-    setErrorMessage("");
+      setSuccessOrder(newOrder);
+      setErrorMessage("");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Gagal membuat pesanan.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (successOrder) {
@@ -316,8 +348,12 @@ export default function CheckoutClient({
 
             {errorMessage && <p className="text-red-600 font-bold text-sm">{errorMessage}</p>}
 
-            <Button type="submit" className="w-full font-black text-lg py-6 uppercase">
-              Buat Pesanan
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="w-full font-black text-lg py-6 uppercase"
+            >
+              {isSubmitting ? "Membuat Pesanan..." : "Buat Pesanan"}
             </Button>
           </form>
         </CardContent>

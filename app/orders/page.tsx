@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import OrdersClient from "@/components/orders/OrdersClient";
-import { getCustomerByUserId, getOrganizerByUserId } from "@/lib/dummyData";
 import { getSession } from "@/lib/auth";
+import { getCustomerIdByUserId, getOrganizerIdByUserId } from "@/lib/orders";
 
 export default async function OrdersPage() {
   const session = await getSession();
@@ -13,17 +13,15 @@ export default async function OrdersPage() {
   let organizerId: string | undefined;
 
   if (session.role === "customer") {
-    const customer = getCustomerByUserId(session.user_id);
-    if (!customer) {
+    customerId = (await getCustomerIdByUserId(session.user_id)) ?? undefined;
+    if (!customerId) {
       redirect("/dashboard");
     }
-    customerId = customer.customer_id;
   } else if (session.role === "organizer") {
-    const organizer = getOrganizerByUserId(session.user_id);
-    if (!organizer) {
+    organizerId = (await getOrganizerIdByUserId(session.user_id)) ?? undefined;
+    if (!organizerId) {
       redirect("/dashboard");
     }
-    organizerId = organizer.organizer_id;
   }
 
   return (
