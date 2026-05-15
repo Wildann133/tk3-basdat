@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import { query } from "@/lib/db";
+import { query, getClient } from "@/lib/db";
 import type {
   CheckoutEvent,
   CheckoutPromotion,
@@ -221,122 +221,161 @@ export async function createOrderForCustomer(
   userId: string,
   payload: CreateOrderPayload
 ): Promise<Order> {
-  const customerId = await getCustomerIdByUserId(userId);
-  if (!customerId) {
-    throw new Error("Customer tidak ditemukan.");
-  }
+  const client = await getClient();
+  try {
+    await client.query('BEGIN');
 
-  const quantity = Number(payload.quantity);
-  if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
-    throw new Error("Jumlah tiket harus bilangan bulat antara 1 sampai 10.");
-  }
-
-  const eventResult = await query(
-    `SELECT
-       e.event_id,
-       e.event_title,
-       e.event_datetime,
-       e.venue_id,
-       v.venue_name,
-       CASE
-         WHEN EXISTS (
-           SELECT 1
-           FROM SEAT s
-           WHERE s.venue_id = v.venue_id
-         ) THEN 'reserved seating'
-         ELSE 'free seating'
-       END AS seating_type
-     FROM EVENT e
-     JOIN VENUE v ON v.venue_id = e.venue_id
-     WHERE e.event_id = $1`,
-    [payload.event_id]
-  );
-
-  if (eventResult.rowCount === 0) {
-    throw new Error("Event tidak ditemukan.");
-  }
-
-  const eventRow = eventResult.rows[0] as CheckoutEventRow;
-
-  const ticketCategoryResult = await query(
-    `SELECT
-       category_id AS id,
-       category_name AS name,
-       price,
-       quota AS capacity
-     FROM TICKET_CATEGORY
-     WHERE category_id = $1
-       AND tevent_id = $2`,
-    [payload.ticket_category_id, payload.event_id]
-  );
-
-  if (ticketCategoryResult.rowCount === 0) {
-    throw new Error("Kategori tiket tidak valid.");
-  }
-
-  const ticketCategoryRow = ticketCategoryResult.rows[0] as TicketCategoryRow;
-  const selectedSeats = parseSeats(payload.seats_input ?? "");
-  if (eventRow.seating_type === "reserved seating" && selectedSeats.length > quantity) {
-    throw new Error("Jumlah kursi yang dipilih tidak boleh melebihi jumlah tiket.");
-  }
-
-  const subtotalAmount = toNumber(ticketCategoryRow.price) * quantity;
-
-  let promotion: CheckoutPromotion | null = null;
-  const normalizedPromoCode = (payload.promo_code ?? "").trim();
-  if (normalizedPromoCode) {
-    const promotionResult = await query(
-      `SELECT
-         promotion_id,
-         promo_code,
-         discount_type,
-         discount_value,
-         usage_limit,
-         start_date,
-         end_date
-       FROM PROMOTION
-       WHERE LOWER(promo_code) = LOWER($1)
-         AND CURRENT_DATE BETWEEN start_date AND end_date
-       LIMIT 1`,
-      [normalizedPromoCode]
-    );
-
-    if (promotionResult.rowCount === 0) {
-      throw new Error("Kode promo tidak ditemukan.");
+    const customerResult = await client.query("SELECT customer_id FROM CUSTOMER WHERE user_id = $1", [userId]);
+    const customerId = (customerResult.rows[0] as CustomerRow | undefined)?.customer_id ?? null;
+    if (!customerId) {
+      throw new Error("Customer tidak ditemukan.");
     }
 
-    promotion = mapPromotion(promotionResult.rows[0] as PromotionRow);
+    const quantity = Number(payload.quantity);
+    if (!Number.isInteger(quantity) || quantity < 1 || quantity > 10) {
+      throw new Error("Jumlah tiket harus bilangan bulat antara 1 sampai 10.");
+    }
+
+    const eventResult = await client.query(
+      `SELECT
+         e.event_id,
+         e.event_title,
+         e.event_datetime,
+         e.venue_id,
+         v.venue_name,
+         CASE
+           WHEN EXISTS (
+             SELECT 1
+             FROM SEAT s
+             WHERE s.venue_id = v.venue_id
+           ) THEN 'reserved seating'
+           ELSE 'free seating'
+         END AS seating_type
+       FROM EVENT e
+       JOIN VENUE v ON v.venue_id = e.venue_id
+       WHERE e.event_id = $1`,
+      [payload.event_id]
+    );
+
+    if (eventResult.rowCount === 0) {
+      throw new Error("Event tidak ditemukan.");
+    }
+
+    const eventRow = eventResult.rows[0] as CheckoutEventRow;
+
+    const ticketCategoryResult = await client.query(
+      `SELECT
+         category_id AS id,
+         category_name AS name,
+         price,
+         quota AS capacity
+       FROM TICKET_CATEGORY
+       WHERE category_id = $1
+         AND tevent_id = $2`,
+      [payload.ticket_category_id, payload.event_id]
+    );
+
+    if (ticketCategoryResult.rowCount === 0) {
+      throw new Error("Kategori tiket tidak valid.");
+    }
+
+    const ticketCategoryRow = ticketCategoryResult.rows[0] as TicketCategoryRow;
+    const selectedSeats = parseSeats(payload.seats_input ?? "");
+    if (eventRow.seating_type === "reserved seating" && selectedSeats.length > quantity) {
+      throw new Error("Jumlah kursi yang dipilih tidak boleh melebihi jumlah tiket.");
+    }
+
+    const subtotalAmount = toNumber(ticketCategoryRow.price) * quantity;
+
+    let promotion: CheckoutPromotion | null = null;
+    const normalizedPromoCode = (payload.promo_code ?? "").trim();
+    if (normalizedPromoCode) {
+      const promotionResult = await client.query(
+        `SELECT
+           promotion_id,
+           promo_code,
+           discount_type,
+           discount_value,
+           usage_limit,
+           start_date,
+           end_date
+         FROM PROMOTION
+         WHERE LOWER(promo_code) = LOWER($1)
+           AND CURRENT_DATE BETWEEN start_date AND end_date
+         LIMIT 1`,
+        [normalizedPromoCode]
+      );
+
+      if (promotionResult.rowCount === 0) {
+        throw new Error("Kode promo tidak ditemukan.");
+      }
+
+      promotion = mapPromotion(promotionResult.rows[0] as PromotionRow);
+    }
+
+    const discountAmount = calculateDiscountAmount(subtotalAmount, promotion);
+    const totalAmount = subtotalAmount - discountAmount;
+    const orderId = randomUUID();
+
+    const insertResult = await client.query(
+      `INSERT INTO "ORDER" (order_id, order_date, payment_status, total_amount, customer_id)
+       VALUES ($1, NOW(), 'Pending', $2, $3)
+       RETURNING order_id, order_date, payment_status, total_amount, customer_id`,
+      [orderId, totalAmount, customerId]
+    );
+
+    const orderRow = insertResult.rows[0] as PersistedOrderRow;
+
+    // Generate Tickets
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    for (let i = 0; i < quantity; i++) {
+      const ticketId = randomUUID();
+      let ticketCode = 'TKTTK-';
+      for (let j = 0; j < 5; j++) {
+        ticketCode += chars[Math.floor(Math.random() * chars.length)];
+      }
+
+      await client.query(
+        `INSERT INTO TICKET (ticket_id, ticket_code, torder_id, tcategory_id) VALUES ($1, $2, $3, $4)`,
+        [ticketId, ticketCode, orderId, payload.ticket_category_id]
+      );
+
+      if (selectedSeats[i]) {
+        await client.query(
+          `INSERT INTO HAS_RELATIONSHIP (ticket_id, seat_id) VALUES ($1, $2)`,
+          [ticketId, selectedSeats[i]]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+
+    return {
+      order_id: orderRow.order_id,
+      order_date: toIsoString(orderRow.order_date),
+      payment_status: orderRow.payment_status,
+      total_amount: toNumber(orderRow.total_amount),
+      customer_id: customerId,
+      event_id: eventRow.event_id,
+      ticket_category_id: ticketCategoryRow.id,
+      ticket_category_name: ticketCategoryRow.name,
+      ticket_price: toNumber(ticketCategoryRow.price),
+      quantity,
+      selected_seats: selectedSeats,
+      promo_code: promotion?.promoCode ?? null,
+      discount_amount: discountAmount,
+      subtotal_amount: subtotalAmount,
+    };
+  } catch (err: any) {
+    await client.query('ROLLBACK');
+    // Tangkap custom exception dari PostgreSQL trigger
+    if (err.code === 'P0001') {
+      throw new Error(err.message);
+    }
+    throw err;
+  } finally {
+    client.release();
   }
-
-  const discountAmount = calculateDiscountAmount(subtotalAmount, promotion);
-  const totalAmount = subtotalAmount - discountAmount;
-  const orderId = randomUUID();
-
-  const insertResult = await query(
-    `INSERT INTO "ORDER" (order_id, order_date, payment_status, total_amount, customer_id)
-     VALUES ($1, NOW(), 'Pending', $2, $3)
-     RETURNING order_id, order_date, payment_status, total_amount, customer_id`,
-    [orderId, totalAmount, customerId]
-  );
-
-  const orderRow = insertResult.rows[0] as PersistedOrderRow;
-
-  return {
-    order_id: orderRow.order_id,
-    order_date: toIsoString(orderRow.order_date),
-    payment_status: orderRow.payment_status,
-    total_amount: toNumber(orderRow.total_amount),
-    customer_id: customerId,
-    event_id: eventRow.event_id,
-    ticket_category_id: ticketCategoryRow.id,
-    ticket_category_name: ticketCategoryRow.name,
-    ticket_price: toNumber(ticketCategoryRow.price),
-    quantity,
-    selected_seats: selectedSeats,
-    promo_code: promotion?.promoCode ?? null,
-    discount_amount: discountAmount,
-    subtotal_amount: subtotalAmount,
-  };
 }
 
 export async function getOrdersForCustomer(userId: string) {

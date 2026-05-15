@@ -29,18 +29,24 @@ export async function GET() {
         e.event_title,
         e.event_id,
         o.order_id AS ord_id,
+        o.payment_status,
+        o.order_date,
         c.full_name AS customer_name,
+        c.user_id,
         hr.seat_id,
         s.section AS seat_section,
         s.row_number AS seat_row,
-        s.seat_number AS seat_number
+        s.seat_number AS seat_number,
+        v.venue_name
       FROM TICKET t
       JOIN TICKET_CATEGORY tc ON tc.category_id = t.tcategory_id
       JOIN EVENT e ON e.event_id = tc.tevent_id
+      JOIN VENUE v ON v.venue_id = e.venue_id
       JOIN "ORDER" o ON o.order_id = t.torder_id
       JOIN CUSTOMER c ON c.customer_id = o.customer_id
       LEFT JOIN HAS_RELATIONSHIP hr ON hr.ticket_id = t.ticket_id
       LEFT JOIN SEAT s ON s.seat_id = hr.seat_id
+      ORDER BY o.order_date DESC
     `);
     return NextResponse.json(result.rows, { status: 200 });
   } catch (error: any) {
