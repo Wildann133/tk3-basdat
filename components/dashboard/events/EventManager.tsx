@@ -428,7 +428,23 @@ export default function EventManager({ role }: { role: string; userId?: string }
                         </span>
                       ))}
                     </div>
-                    <Input placeholder="Ketik artis dan tekan Enter" value={artistInput} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setArtistInput(e.target.value)} onKeyDown={handleAddArtist} className="border-2 border-black bg-white" />
+                    <div className="flex gap-2">
+                      <select
+                        value={selectedArtistId}
+                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedArtistId(e.target.value)}
+                        className="w-full flex h-10 rounded-md bg-white border-2 border-black px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black"
+                      >
+                        <option value="">Pilih Artist...</option>
+                        {artistOptions.map((artist) => (
+                          <option key={artist.id} value={artist.id}>
+                            {artist.name}
+                          </option>
+                        ))}
+                      </select>
+                      <Button type="button" onClick={handleAddArtist} className="border-2 border-black bg-white text-black font-bold">
+                        Tambah
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="space-y-2">
