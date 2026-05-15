@@ -6,22 +6,43 @@ import { randomUUID } from 'crypto';
 export const dynamic = 'force-dynamic';
 
 // 1. GET: Ambil semua kategori tiket
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // Kita JOIN ke EVENT hanya untuk ambil judulnya agar tabel di UI informatif
-    const result = await query(`
-      SELECT 
-        tc.category_id AS id, 
-        tc.category_name AS name, 
-        tc.quota, 
-        tc.price, 
-        e.event_title AS event_name,
-        tc.tevent_id AS event_id,
-        (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count
-      FROM TICKET_CATEGORY tc
-      JOIN EVENT e ON tc.tevent_id = e.event_id
-      ORDER BY e.event_title ASC
-    `);
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
+
+    let result;
+    if (userId) {
+      result = await query(`
+        SELECT 
+          tc.category_id AS id, 
+          tc.category_name AS name, 
+          tc.quota, 
+          tc.price, 
+          e.event_title AS event_name,
+          tc.tevent_id AS event_id,
+          (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count
+        FROM TICKET_CATEGORY tc
+        JOIN EVENT e ON tc.tevent_id = e.event_id
+        JOIN ORGANIZER org ON org.organizer_id = e.organizer_id
+        WHERE org.user_id = $1
+        ORDER BY e.event_title ASC
+      `, [userId]);
+    } else {
+      result = await query(`
+        SELECT 
+          tc.category_id AS id, 
+          tc.category_name AS name, 
+          tc.quota, 
+          tc.price, 
+          e.event_title AS event_name,
+          tc.tevent_id AS event_id,
+          (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count
+        FROM TICKET_CATEGORY tc
+        JOIN EVENT e ON tc.tevent_id = e.event_id
+        ORDER BY e.event_title ASC
+      `);
+    }
     return NextResponse.json(result.rows, { status: 200 });
   } catch (error: any) {
     console.error("Error GET Ticket Category:", error);

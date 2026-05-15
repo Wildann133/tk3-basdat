@@ -38,9 +38,10 @@ type VenueOption = {
 /* ── props ── */
 interface TicketFormProps {
   onSave: () => void;
+  userId?: string;
 }
 
-export default function TicketForm({ onSave }: TicketFormProps) {
+export default function TicketForm({ onSave, userId }: TicketFormProps) {
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -59,26 +60,28 @@ export default function TicketForm({ onSave }: TicketFormProps) {
   /* ── fetch orders ── */
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await fetch("/api/tickets/orders");
+      const url = userId ? `/api/tickets/orders?userId=${userId}` : "/api/tickets/orders";
+      const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
       setOrders(data);
     } catch (err) {
       console.error("Gagal memuat orders:", err);
     }
-  }, []);
+  }, [userId]);
 
   /* ── fetch categories ── */
   const fetchCategories = useCallback(async () => {
     try {
-      const res = await fetch("/api/ticket-categories");
+      const url = userId ? `/api/ticket-categories?userId=${userId}` : "/api/ticket-categories";
+      const res = await fetch(url);
       if (!res.ok) return;
       const data = await res.json();
       setCategories(data);
     } catch (err) {
       console.error("Gagal memuat categories:", err);
     }
-  }, []);
+  }, [userId]);
 
   /* ── fetch seats ── */
   const fetchSeats = useCallback(async () => {
