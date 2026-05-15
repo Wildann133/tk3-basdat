@@ -33,14 +33,17 @@ export async function GET() {
         o.order_date,
         c.full_name AS customer_name,
         c.user_id,
+        t.status,
         hr.seat_id,
         s.section AS seat_section,
         s.row_number AS seat_row,
         s.seat_number AS seat_number,
-        v.venue_name
+        v.venue_name,
+        org.user_id AS organizer_user_id
       FROM TICKET t
       JOIN TICKET_CATEGORY tc ON tc.category_id = t.tcategory_id
       JOIN EVENT e ON e.event_id = tc.tevent_id
+      JOIN ORGANIZER org ON org.organizer_id = e.organizer_id
       JOIN VENUE v ON v.venue_id = e.venue_id
       JOIN "ORDER" o ON o.order_id = t.torder_id
       JOIN CUSTOMER c ON c.customer_id = o.customer_id
@@ -116,6 +119,56 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({ error: error.message || 'Gagal membuat tiket' }, { status: 500 });
+  } finally {
+    client.release();
+  }
+}
+
+// 3. PUT: Update status tiket dan kursi (khusus Admin)
+export async function PUT(request: Request) {
+  const client = await getClient();
+
+  try {
+    const { ticket_id, status, seat_id } = await request.json();
+
+    if (!ticket_id) {
+      return NextResponse.json({ error: 'Ticket ID wajib diisi' }, { status: 400 });
+    }
+
+    await client.query('BEGIN');
+
+    // 1. Update status di tabel TICKET
+    if (status) {
+      await client.query(
+        'UPDATE TICKET SET status = $1 WHERE ticket_id = $2',
+        [status, ticket_id]
+      );
+    }
+
+    // 2. Update/Delete kursi di tabel HAS_RELATIONSHIP
+    // Hapus relasi lama jika ada
+    await client.query('DELETE FROM HAS_RELATIONSHIP WHERE ticket_id = $1', [ticket_id]);
+
+    // Insert relasi baru jika seat_id diberikan
+    if (seat_id && seat_id !== 'none') {
+      await client.query(
+        'INSERT INTO HAS_RELATIONSHIP (ticket_id, seat_id) VALUES ($1, $2)',
+        [ticket_id, seat_id]
+      );
+    }
+
+    await client.query('COMMIT');
+
+    return NextResponse.json({ message: 'Tiket berhasil diperbarui' }, { status: 200 });
+  } catch (error: any) {
+    await client.query('ROLLBACK');
+    console.error('Error PUT Ticket:', error);
+
+    if (error.code === '23505') {
+      return NextResponse.json({ error: 'Kursi sudah di-assign ke tiket lain.' }, { status: 409 });
+    }
+
+    return NextResponse.json({ error: error.message || 'Gagal memperbarui tiket' }, { status: 500 });
   } finally {
     client.release();
   }

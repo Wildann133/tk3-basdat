@@ -54,7 +54,7 @@ export default async function TicketsPage() {
         </div>
 
         <div className="p-6 bg-[#f9f6ef]">
-          <TicketTable role={role} />
+          <TicketTable role={role} userId={session?.userId} />
         </div>
       </div>
 
