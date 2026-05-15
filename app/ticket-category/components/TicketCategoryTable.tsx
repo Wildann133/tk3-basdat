@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import TicketCategoryForm from "./TicketCategoryForm";
 
 export default function TicketCategoryTable({ role }: { role?: string }) {
+  // Hanya admin dan organizer yang bisa memanajemen (CUD)
+  // Guest atau customer hanya bisa read-only
   const canManage = role === "admin" || role === "organizer";
 
   const [categories, setCategories] = useState<any[]>([]);
@@ -11,43 +13,69 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Ambil data dari API
+  // STATE UNTUK NOTIFIKASI (Toast)
+  const [notification, setNotification] = useState<{ type: "success" | "error", message: string } | null>(null);
+
+  const showNotification = (type: "success" | "error", message: string) => {
+    setNotification({ type, message });
+    setTimeout(() => {
+      setNotification(null);
+    }, 3000);
+  };
+
+  // Ambil data dari API (Ditambah no-store agar mematikan cache browser)
   useEffect(() => {
-    fetch('/api/ticket-categories')
+    fetch('/api/ticket-categories', { cache: 'no-store' })
       .then(res => res.json())
       .then(data => {
         setCategories(data);
+        setIsLoading(false);
+      })
+      .catch((error) => {
+        console.error("Gagal memuat kategori:", error);
+        showNotification("error", "Gagal memuat data dari server.");
         setIsLoading(false);
       });
   }, []);
 
   const handleSave = async (payload: any) => {
     const isEdit = !!payload.id;
-    const res = await fetch('/api/ticket-categories', {
-      method: isEdit ? 'PUT' : 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
+    try {
+      const res = await fetch('/api/ticket-categories', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
 
-    if (res.ok) {
-      const saved = await res.json();
-      // Refresh data agar JOIN event_name terupdate
-      const refresh = await fetch('/api/ticket-categories');
-      const newData = await refresh.json();
-      setCategories(newData);
-    } else {
-      const err = await res.json();
-      alert(err.error);
+      if (res.ok) {
+        // Refresh data agar JOIN event_name terupdate dari server (Anti-Cache)
+        const refresh = await fetch('/api/ticket-categories', { cache: 'no-store' });
+        const newData = await refresh.json();
+        setCategories(newData);
+        showNotification("success", isEdit ? "Kategori tiket berhasil diupdate!" : "Kategori baru berhasil ditambahkan!");
+      } else {
+        const err = await res.json();
+        showNotification("error", err.error || "Gagal menyimpan kategori tiket.");
+      }
+    } catch (error) {
+      console.error("Gagal simpan:", error);
+      showNotification("error", "Terjadi kesalahan pada sistem.");
     }
   };
 
   const handleDelete = async (id: string) => {
-    const res = await fetch(`/api/ticket-categories?id=${id}`, { method: 'DELETE' });
-    if (res.ok) {
-      setCategories(categories.filter((c) => c.id !== id));
-    } else {
-      const err = await res.json();
-      alert(err.error);
+    try {
+      const res = await fetch(`/api/ticket-categories?id=${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        setCategories(categories.filter((c) => c.id !== id));
+        showNotification("success", "Kategori tiket berhasil dihapus!");
+      } else {
+        const err = await res.json();
+        showNotification("error", err.error || "Gagal menghapus kategori tiket.");
+      }
+    } catch (error) {
+      console.error("Gagal hapus:", error);
+      showNotification("error", "Terjadi kesalahan pada sistem.");
     }
   };
 
@@ -59,8 +87,25 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
 
   return (
     <div>
+      {/* TOAST NOTIFICATION UI */}
+      {notification && (
+        <div 
+        className={`fixed bottom-8 right-8 z- px-5 py-3 border-4 border-black font-head tracking-wide text-sm shadow-[6px_6px_0_0_#000] transition-all animate-bounce ${
+          notification.type === "success" ? "bg-[#a7c957] text-black" : "bg-[#e63946] text-white"
+        }`}
+        >
+          {notification.type === "success" ? "✅ " : "⚠️ "} 
+          {notification.message}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
-        <input placeholder="Cari kategori..." className="border-2 border-black px-3 py-2 bg-white text-sm" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <input 
+          placeholder="Cari kategori..." 
+          className="border-2 border-black px-3 py-2 bg-white text-sm outline-none focus:shadow-[3px_3px_0_0_#000] focus:bg-[#ffdb33] transition-all duration-150" 
+          value={search} 
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)} 
+        />
         <div className="flex items-center gap-3">
           <span className="font-head text-[0.65rem] uppercase bg-[#ffdb33] border-2 border-black px-3 py-1.5">{filtered.length} kategori</span>
           {canManage && <TicketCategoryForm onSave={handleSave} />}
@@ -71,6 +116,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
         <table className="w-full text-sm">
           <thead className="bg-black text-[#ffdb33]">
             <tr>
+              <th className="px-5 py-3 text-left font-head text-[0.6rem] uppercase w-32">ID Kategori</th>
               <th className="px-5 py-3 text-left font-head text-[0.6rem] uppercase">Kategori</th>
               <th className="px-5 py-3 text-center font-head text-[0.6rem] uppercase">Quota</th>
               <th className="px-5 py-3 text-left font-head text-[0.6rem] uppercase">Harga</th>
@@ -80,9 +126,12 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={5} className="py-10 text-center animate-pulse">Menghubungkan ke Neon...</td></tr>
+              <tr><td colSpan={canManage ? 6 : 5} className="py-10 text-center animate-pulse">Menghubungkan ke Neon...</td></tr>
+            ) : filtered.length === 0 ? (
+              <tr><td colSpan={canManage ? 6 : 5} className="py-10 text-center text-gray-400">Tidak ada kategori ditemukan.</td></tr>
             ) : filtered.map((cat, i) => (
               <tr key={cat.id} className={`border-b-2 border-black ${i % 2 === 0 ? "bg-white" : "bg-[#f9f6ef]"} hover:bg-[#fff9d6]`}>
+                <td className="px-5 py-3.5 font-mono text-xs text-gray-500 truncate max-w-[120px]" title={cat.id}>{cat.id}</td>
                 <td className="px-5 py-3.5 font-semibold text-black">{cat.name}</td>
                 <td className="px-5 py-3.5 text-center"><span className="bg-[#ffdb33] border-2 border-black px-2 py-0.5 text-[0.6rem] font-head">{cat.quota}</span></td>
                 <td className="px-5 py-3.5 font-semibold">Rp {cat.price.toLocaleString("id-ID")}</td>
@@ -90,7 +139,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
                 {canManage && (
                   <td className="px-5 py-3.5 text-center space-x-2">
                     <TicketCategoryForm category={cat} onSave={handleSave} />
-                    <button onClick={() => setDeleteId(cat.id)} className="font-head text-[0.72rem] px-3 py-1.5 border-2 border-black bg-white shadow-[2px_2px_0_0_#000] hover:bg-[#e63946] hover:text-white transition-all">Hapus</button>
+                    <button onClick={() => setDeleteId(cat.id)} className="font-head text-[0.72rem] px-3 py-1.5 border-2 border-black bg-white shadow-[2px_2px_0_0_#000] hover:bg-[#e63946] hover:text-white transition-all cursor-pointer">Hapus</button>
                   </td>
                 )}
               </tr>
@@ -99,14 +148,21 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
         </table>
       </div>
 
+      {/* MODAL KONFIRMASI DELETE */}
       {deleteId && (
-        <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50">
-          <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] p-6 max-w-sm">
-            <h2 className="font-head text-xl mb-2">Hapus Kategori?</h2>
-            <p className="text-sm mb-6 text-gray-600">Yakin ingin menghapus <span className="font-bold">{categoryToDelete?.name}</span>?</p>
+        <div className="fixed inset-0 bg-black/55 flex items-center justify-center z-50 px-4">
+          <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] p-6 max-w-sm w-full">
+            <h2 className="font-head text-xl mb-2 text-black">Hapus Kategori?</h2>
+            <div className="text-sm mb-6 text-gray-600 bg-gray-50 p-3 border-2 border-dashed border-gray-300">
+              <p>Yakin ingin menghapus kategori ini?</p>
+              <div className="mt-2">
+                <span className="block font-bold text-black">{categoryToDelete?.name}</span>
+                <span className="block font-mono text-xs mt-1">ID: {categoryToDelete?.id}</span>
+              </div>
+            </div>
             <div className="flex gap-2">
-              <button onClick={() => setDeleteId(null)} className="flex-1 py-2 border-2 border-black bg-white">Batal</button>
-              <button onClick={() => { handleDelete(deleteId); setDeleteId(null); }} className="flex-1 py-2 border-2 border-black bg-[#e63946] text-white">Ya, Hapus</button>
+              <button onClick={() => setDeleteId(null)} className="flex-1 py-2 font-head text-xs border-2 border-black bg-white cursor-pointer hover:bg-gray-100 transition-all shadow-[3px_3px_0_0_#000]">Batal</button>
+              <button onClick={() => { handleDelete(deleteId); setDeleteId(null); }} className="flex-1 py-2 font-head text-xs border-2 border-black bg-[#e63946] text-white cursor-pointer hover:bg-[#c1121f] transition-all shadow-[3px_3px_0_0_#000]">Ya, Hapus</button>
             </div>
           </div>
         </div>

@@ -2,12 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { fetchJson } from "@/lib/api";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { Input } from "@/components/retroui/Input";
 import { Carousel } from "@/components/retroui/Carousel";
-import { Calendar, Clock, MapPin, Search, Music, Ticket } from "lucide-react";
+import { fetchJson } from "@/lib/api";
+import { Calendar, Clock, MapPin, Search, Ticket } from "lucide-react";
 
 type TicketCategory = {
   id: string;
@@ -16,79 +16,109 @@ type TicketCategory = {
   capacity: number;
 };
 
-type EventData = {
+type EventApiRow = {
   id: string;
   event_id: string;
   title: string;
   event_title: string;
   event_datetime: string;
   venue_id: string;
-  organizer_id: string;
-  artists: string[];
-  ticket_categories: TicketCategory[];
 };
 
-type VenueData = {
-  id: string;
+type VenueRow = {
   venue_id: string;
-  name: string;
   venue_name: string;
+};
+
+type TicketCategoryApiRow = {
+  id: string;
+  name: string;
+  quota: number;
+  price: number;
+  event_id: string;
+};
+
+type EventData = {
+  event_id: string;
+  event_title: string;
+  event_datetime: string;
+  venue_id: string;
+  ticket_categories: TicketCategory[];
 };
 
 export default function EventsPage() {
   const router = useRouter();
   const [events, setEvents] = useState<EventData[]>([]);
-  const [venues, setVenues] = useState<VenueData[]>([]);
+  const [venues, setVenues] = useState<VenueRow[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [venueFilter, setVenueFilter] = useState("ALL");
-  const [artistFilter, setArtistFilter] = useState("ALL");
 
   useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      setError("");
+    let cancelled = false;
+
+    void (async () => {
       try {
-        const [eventRows, venueRows] = await Promise.all([
-          fetchJson<EventData[]>("/api/events"),
-          fetchJson<VenueData[]>("/api/venues"),
+        const [eventRows, venueRows, ticketCategoryRows] = await Promise.all([
+          fetchJson<EventApiRow[]>("/api/events"),
+          fetchJson<VenueRow[]>("/api/venues"),
+          fetchJson<TicketCategoryApiRow[]>("/api/ticket-categories"),
         ]);
-        setEvents(eventRows);
-        setVenues(venueRows);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Gagal memuat daftar event.");
+
+        const categoriesByEvent = new Map<string, TicketCategory[]>();
+        ticketCategoryRows.forEach((category) => {
+          const current = categoriesByEvent.get(category.event_id) ?? [];
+          current.push({
+            id: category.id,
+            name: category.name,
+            price: Number(category.price),
+            capacity: Number(category.quota),
+          });
+          categoriesByEvent.set(category.event_id, current);
+        });
+
+        const hydratedEvents = eventRows
+          .map((event) => ({
+            event_id: event.event_id,
+            event_title: event.event_title || event.title,
+            event_datetime: event.event_datetime,
+            venue_id: event.venue_id,
+            ticket_categories: categoriesByEvent.get(event.event_id) ?? [],
+          }))
+          .filter((event) => event.ticket_categories.length > 0);
+
+        if (!cancelled) {
+          setEvents(hydratedEvents);
+          setVenues(venueRows);
+        }
+      } catch (error) {
+        if (!cancelled) {
+          setErrorMessage(
+            error instanceof Error ? error.message : "Gagal memuat daftar event."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
+    })();
+
+    return () => {
+      cancelled = true;
     };
-
-    void loadData();
   }, []);
-
-  // Collect unique artists for the filter dropdown
-  const allArtists = useMemo(() => {
-    const artistSet = new Set<string>();
-    events.forEach((event) => {
-      event.artists.forEach((artist) => artistSet.add(artist));
-    });
-    return Array.from(artistSet).sort();
-  }, [events]);
 
   const filteredEvents = useMemo(() => {
     return events.filter((event) => {
-      const matchesSearch =
-        event.event_title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.artists.some((artist) =>
-          artist.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-
+      const matchesSearch = event.event_title
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
       const matchesVenue = venueFilter === "ALL" || event.venue_id === venueFilter;
-      const matchesArtist = artistFilter === "ALL" || event.artists.includes(artistFilter);
-
-      return matchesSearch && matchesVenue && matchesArtist;
+      return matchesSearch && matchesVenue;
     });
-  }, [events, searchQuery, venueFilter, artistFilter]);
+  }, [events, searchQuery, venueFilter]);
 
   const getVenueName = (venueId: string) => {
     const venue = venues.find((v) => v.venue_id === venueId);
@@ -123,13 +153,13 @@ export default function EventsPage() {
 
       {/* Filters Section */}
       <Card className="bg-[#ffdb33] mb-8 border-4 border-black shadow-[4px_4px_0_0_#000] p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative bg-white">
             <Search className="absolute left-3 top-3 w-5 h-5 text-gray-600" />
             <Input
-              placeholder="Cari judul acara atau artist..."
+              placeholder="Cari judul acara..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(e.target.value)}
               className="pl-10 border-2 border-black font-bold"
             />
           </div>
@@ -137,7 +167,7 @@ export default function EventsPage() {
           <div>
             <select
               value={venueFilter}
-              onChange={(e) => setVenueFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setVenueFilter(e.target.value)}
               className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold shadow-[2px_2px_0_0_#000] outline-hidden focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all cursor-pointer"
             >
               <option value="ALL">Semua Venue</option>
@@ -148,33 +178,18 @@ export default function EventsPage() {
               ))}
             </select>
           </div>
-
-          <div>
-            <select
-              value={artistFilter}
-              onChange={(e) => setArtistFilter(e.target.value)}
-              className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold shadow-[2px_2px_0_0_#000] outline-hidden focus:translate-x-[2px] focus:translate-y-[2px] focus:shadow-none transition-all cursor-pointer"
-            >
-              <option value="ALL">Semua Artist</option>
-              {allArtists.map((artist) => (
-                <option key={artist} value={artist}>
-                  {artist}
-                </option>
-              ))}
-            </select>
-          </div>
         </div>
       </Card>
 
       {/* Events Carousel */}
-      {loading ? (
-        <Card className="p-12 text-center bg-gray-100 border-4 border-black shadow-[8px_8px_0_0_#000]">
-          <h2 className="text-2xl font-black font-head">Memuat acara...</h2>
-        </Card>
-      ) : error ? (
+      {errorMessage ? (
         <Card className="p-12 text-center bg-red-100 border-4 border-black shadow-[8px_8px_0_0_#000]">
-          <h2 className="text-2xl font-black font-head">Gagal memuat acara</h2>
-          <p className="font-bold mt-2">{error}</p>
+          <h2 className="text-2xl font-black font-head">Gagal memuat event</h2>
+          <p className="font-bold mt-2">{errorMessage}</p>
+        </Card>
+      ) : loading ? (
+        <Card className="p-12 text-center bg-gray-100 border-4 border-black shadow-[8px_8px_0_0_#000]">
+          <h2 className="text-2xl font-black font-head">Memuat event...</h2>
         </Card>
       ) : filteredEvents.length === 0 ? (
         <Card className="p-12 text-center bg-gray-100 border-4 border-black shadow-[8px_8px_0_0_#000]">
@@ -223,14 +238,9 @@ export default function EventsPage() {
 
                           <div className="mt-4 mb-6">
                             <div className="flex items-start gap-2 mb-2">
-                              <Music className="w-4 h-4 text-gray-700 mt-1" />
-                              <div className="flex flex-wrap gap-1">
-                                {event.artists.map((artist, idx) => (
-                                  <span key={idx} className="bg-white border-2 border-black text-xs font-bold px-2 py-1 rounded shadow-[2px_2px_0_0_#000]">
-                                    {artist}
-                                  </span>
-                                ))}
-                              </div>
+                              <span className="bg-white border-2 border-black text-xs font-bold px-2 py-1 rounded shadow-[2px_2px_0_0_#000]">
+                                {event.ticket_categories.length} kategori tiket
+                              </span>
                             </div>
                           </div>
 

@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import SeatForm from "./SeatForm";
-import { SEATS, VENUES, HAS_RELATIONSHIP } from "@/lib/dummyData";
 
 /* ── local type ── */
 export type SeatRow = {
@@ -13,48 +12,113 @@ export type SeatRow = {
   venue_id: string;
 };
 
-/* ── helpers ── */
-const getVenueName = (venueId: string) =>
-  VENUES.find((v) => v.venue_id === venueId)?.venue_name ?? "—";
+type SeatFromAPI = SeatRow & {
+  venue_name: string;
+  is_assigned: boolean;
+};
 
-const isSeatAssigned = (seatId: string, assignedSet: Set<string>) =>
-  assignedSet.has(seatId);
+type VenueOption = {
+  venue_id: string;
+  venue_name: string;
+  seating_type: string;
+};
 
 /* ── component ── */
 export default function SeatTable({ role }: { role?: string }) {
   const canManage = role === "admin" || role === "organizer";
 
-  const [seats, setSeats] = useState<SeatRow[]>(
-    SEATS.map((s) => ({ ...s, row: String(s.row) }))
-  );
+  const [seats, setSeats] = useState<SeatFromAPI[]>([]);
+  const [venues, setVenues] = useState<VenueOption[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [venueFilter, setVenueFilter] = useState("all");
   const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState("");
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  /* track which seats are assigned to tickets */
-  const assignedSeatIds = useMemo(
-    () => new Set(HAS_RELATIONSHIP.map((r) => r.seat_id)),
-    []
-  );
+  /* ── fetch data ── */
+  const fetchSeats = useCallback(async () => {
+    try {
+      const res = await fetch("/api/seats");
+      if (!res.ok) throw new Error("Gagal memuat kursi");
+      const data: SeatFromAPI[] = await res.json();
+      setSeats(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchVenues = useCallback(async () => {
+    try {
+      const res = await fetch("/api/venues");
+      if (!res.ok) throw new Error("Gagal memuat venue");
+      const data: VenueOption[] = await res.json();
+      setVenues(data);
+    } catch (err) {
+      console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchSeats();
+    fetchVenues();
+  }, [fetchSeats, fetchVenues]);
 
   /* reserved-seating venues only */
   const reservedVenues = useMemo(
-    () => VENUES.filter((v) => v.seating_type === "reserved seating"),
-    []
+    () => venues.filter((v) => v.seating_type === "reserved seating"),
+    [venues]
   );
 
+  /* ── venue name helper ── */
+  const getVenueName = (venueId: string) =>
+    venues.find((v) => v.venue_id === venueId)?.venue_name ?? "—";
+
   /* ── handlers ── */
-  const handleSave = (seat: SeatRow) => {
-    setSeats((prev) => {
-      const exists = prev.find((s) => s.seat_id === seat.seat_id);
-      if (exists) return prev.map((s) => (s.seat_id === seat.seat_id ? seat : s));
-      return [...prev, seat];
-    });
+  const handleSave = async (seat: SeatRow) => {
+    try {
+      const isEdit = seats.some((s) => s.seat_id === seat.seat_id);
+      const method = isEdit ? "PUT" : "POST";
+
+      const res = await fetch("/api/seats", {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(seat),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Gagal menyimpan kursi");
+      }
+
+      // Refresh data dari DB
+      await fetchSeats();
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setSeats((prev) => prev.filter((s) => s.seat_id !== id));
-    setDeleteId(null);
+  const handleDelete = async (id: string) => {
+    setDeleteLoading(true);
+    setDeleteError("");
+    try {
+      const res = await fetch(`/api/seats?id=${id}`, { method: "DELETE" });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Gagal menghapus kursi");
+      }
+
+      setDeleteId(null);
+      // Refresh data dari DB
+      await fetchSeats();
+    } catch (err: any) {
+      setDeleteError(err.message);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   /* ── filtering ── */
@@ -80,11 +144,21 @@ export default function SeatTable({ role }: { role?: string }) {
 
   /* ── stats ── */
   const totalSeats = seats.length;
-  const terisiCount = seats.filter((s) => assignedSeatIds.has(s.seat_id)).length;
+  const terisiCount = seats.filter((s) => s.is_assigned).length;
   const tersediaCount = totalSeats - terisiCount;
 
   const seatToDelete = seats.find((s) => s.seat_id === deleteId);
-  const deleteIsAssigned = deleteId ? assignedSeatIds.has(deleteId) : false;
+  const deleteIsAssigned = seatToDelete?.is_assigned ?? false;
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <div className="font-head text-sm tracking-widest uppercase text-gray-500 animate-pulse">
+          Memuat data kursi...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -118,7 +192,7 @@ export default function SeatTable({ role }: { role?: string }) {
                 placeholder="Cari section, baris, atau nomor..."
                 className="w-full pl-9 pr-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black placeholder:text-gray-400 outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
               />
             </div>
 
@@ -127,7 +201,7 @@ export default function SeatTable({ role }: { role?: string }) {
               <select
                 className="px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black font-sans outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer"
                 value={venueFilter}
-                onChange={(e) => setVenueFilter(e.target.value)}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setVenueFilter(e.target.value)}
               >
                 <option value="all">Semua Venue</option>
                 {reservedVenues.map((v) => (
@@ -172,7 +246,7 @@ export default function SeatTable({ role }: { role?: string }) {
 
               <tbody>
                 {filtered.map((seat) => {
-                  const assigned = isSeatAssigned(seat.seat_id, assignedSeatIds);
+                  const assigned = seat.is_assigned;
                   return (
                     <tr
                       key={seat.seat_id}
@@ -231,7 +305,7 @@ export default function SeatTable({ role }: { role?: string }) {
                               venues={reservedVenues}
                             />
                             <button
-                              onClick={() => setDeleteId(seat.seat_id)}
+                              onClick={() => { setDeleteId(seat.seat_id); setDeleteError(""); }}
                               disabled={assigned}
                               title={
                                 assigned
@@ -298,18 +372,26 @@ export default function SeatTable({ role }: { role?: string }) {
                     <span className="text-gray-500 font-sans">{getVenueName(seatToDelete?.venue_id ?? "")}</span>
                   </p>
 
+                  {deleteError && (
+                    <p className="font-head text-[0.65rem] tracking-wide text-[#e63946] border-2 border-[#e63946] px-3 py-2 mb-4 shadow-[2px_2px_0_0_#e63946]">
+                      {deleteError}
+                    </p>
+                  )}
+
                   <div className="flex gap-2.5">
                     <button
                       onClick={() => setDeleteId(null)}
+                      disabled={deleteLoading}
                       className="flex-1 py-2.5 border-2 border-black bg-white text-black font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-gray-100 hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
                     >
                       Batal
                     </button>
                     <button
                       onClick={() => handleDelete(deleteId)}
-                      className="flex-1 py-2.5 border-2 border-black bg-[#e63946] text-white font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#c62f3b] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer"
+                      disabled={deleteLoading}
+                      className="flex-1 py-2.5 border-2 border-black bg-[#e63946] text-white font-head text-xs shadow-[3px_3px_0_0_#000] hover:bg-[#c62f3b] hover:translate-y-px hover:shadow-[2px_2px_0_0_#000] active:translate-y-0.5 active:shadow-none transition-all duration-100 cursor-pointer disabled:opacity-50"
                     >
-                      Ya, Hapus
+                      {deleteLoading ? "Menghapus..." : "Ya, Hapus"}
                     </button>
                   </div>
                 </>

@@ -1,38 +1,35 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import {
-  TICKETS,
-  ORDERS,
-  CUSTOMERS,
-  EVENTS,
-  TICKET_CATEGORIES,
-  VENUES,
-  SEATS,
-  HAS_RELATIONSHIP,
-} from "@/lib/dummyData";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 
 /* ─────────── types ─────────── */
-type TicketData = (typeof TICKETS)[number];
-
-/* ─────────── helpers ─────────── */
-const getOrder = (orderId: string) => ORDERS.find((o) => o.order_id === orderId);
-const getCustomer = (customerId: string) => CUSTOMERS.find((c) => c.customer_id === customerId);
-const getEvent = (eventId: string) => EVENTS.find((e) => e.event_id === eventId);
-const getCategory = (tcId: string) => TICKET_CATEGORIES.find((t) => t.tcategory_id === tcId);
-const getVenue = (venueId: string) => VENUES.find((v) => v.venue_id === venueId);
-
-const getSeatLabel = (ticketId: string) => {
-  const rel = HAS_RELATIONSHIP.find((r) => r.ticket_id === ticketId);
-  if (!rel) return null;
-  const seat = SEATS.find((s) => s.seat_id === rel.seat_id);
-  if (!seat) return null;
-  return `Section ${seat.section}, Baris ${seat.row}, No. ${seat.number}`;
+type TicketFromAPI = {
+  ticket_id: string;
+  ticket_code: string;
+  order_id: string;
+  tcategory_id: string;
+  category_name: string;
+  category_price: number;
+  event_title: string;
+  event_id: string;
+  ord_id: string;
+  payment_status: string;
+  order_date: string;
+  customer_name: string;
+  user_id: string;
+  seat_id: string | null;
+  seat_section: string | null;
+  seat_row: string | null;
+  seat_number: number | null;
+  venue_name: string;
 };
 
+/* ─────────── helpers ─────────── */
 const STATUS_COLORS: Record<string, { bg: string; text: string; border: string }> = {
-  Lunas:      { bg: "bg-green-100",  text: "text-green-800",  border: "border-green-800" },
-  Digunakan:  { bg: "bg-blue-100",   text: "text-blue-800",   border: "border-blue-800" },
+  Paid: { bg: "bg-green-100",  text: "text-green-800",  border: "border-green-800" },
+  Lunas: { bg: "bg-green-100",  text: "text-green-800",  border: "border-green-800" },
+  Pending: { bg: "bg-yellow-100", text: "text-yellow-800", border: "border-yellow-800" },
+  Cancelled: { bg: "bg-red-100",    text: "text-red-700",    border: "border-red-700" },
   Dibatalkan: { bg: "bg-red-100",    text: "text-red-700",    border: "border-red-700" },
 };
 
@@ -46,30 +43,43 @@ export default function MyTicketList({ role, userId }: MyTicketListProps) {
   const isCustomer = role === "customer";
   const isAdmin = role === "admin";
 
+  const [tickets, setTickets] = useState<TicketFromAPI[]>([]);
+  const [loading, setLoading] = useState(true);
+
   /* ── filter state ── */
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
+  const fetchTickets = useCallback(async () => {
+    try {
+      const res = await fetch("/api/tickets");
+      if (!res.ok) throw new Error("Gagal memuat tiket");
+      const data: TicketFromAPI[] = await res.json();
+      setTickets(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchTickets();
+  }, [fetchTickets]);
+
   /* ── determine which tickets this user can see ── */
   const visibleTickets = useMemo(() => {
     if (isAdmin) {
-      // Admin sees ALL tickets
-      return TICKETS;
+      return tickets;
     }
 
     if (isCustomer) {
-      // Customer: TICKET → ORDER → CUSTOMER → user_id
-      const customer = CUSTOMERS.find((c) => c.user_id === userId);
-      if (!customer) return [];
-      const customerOrderIds = ORDERS
-        .filter((o) => o.customer_id === customer.customer_id)
-        .map((o) => o.order_id);
-      return TICKETS.filter((t) => customerOrderIds.includes(t.order_id));
+      return tickets.filter((t) => t.user_id === userId);
     }
 
-    // Organizer: show all tickets (in frontend; backend would filter per event)
-    return TICKETS;
-  }, [isAdmin, isCustomer, userId]);
+    // Organizer: show all tickets (ideally filtered by organizer's events in backend)
+    return tickets;
+  }, [isAdmin, isCustomer, userId, tickets]);
 
   /* ── apply search + status filter ── */
   const filteredTickets = useMemo(() => {
@@ -77,32 +87,38 @@ export default function MyTicketList({ role, userId }: MyTicketListProps) {
 
     // status filter
     if (statusFilter !== "all") {
-      result = result.filter((t) => t.status === statusFilter);
+      result = result.filter((t) => t.payment_status === statusFilter);
     }
 
     // search (code OR event title)
     if (search.trim()) {
       const q = search.toLowerCase();
       result = result.filter((t) => {
-        const order = getOrder(t.order_id);
-        const ev = order ? getEvent(order.event_id) : null;
         return (
           t.ticket_code.toLowerCase().includes(q) ||
-          (ev?.event_title ?? "").toLowerCase().includes(q)
+          (t.event_title ?? "").toLowerCase().includes(q)
         );
       });
     }
 
-    return result.sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
+    return result;
   }, [visibleTickets, search, statusFilter]);
 
   /* ── unique statuses for filter dropdown ── */
   const availableStatuses = useMemo(
-    () => Array.from(new Set(visibleTickets.map((t) => t.status))),
+    () => Array.from(new Set(visibleTickets.map((t) => t.payment_status))),
     [visibleTickets]
   );
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20 bg-white border-4 border-black">
+        <div className="font-head text-sm tracking-widest uppercase text-gray-500 animate-pulse">
+          Memuat data tiket...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white border-4 border-black">
@@ -129,7 +145,7 @@ export default function MyTicketList({ role, userId }: MyTicketListProps) {
               placeholder="Cari kode tiket / event..."
               className="w-full pl-9 pr-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black placeholder:text-gray-400 outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearch(e.target.value)}
             />
           </div>
 
@@ -138,11 +154,11 @@ export default function MyTicketList({ role, userId }: MyTicketListProps) {
             <select
               className="px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-sm text-black font-sans outline-none transition-all duration-150 focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] cursor-pointer"
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setStatusFilter(e.target.value)}
             >
               <option value="all">Semua Status</option>
               {availableStatuses.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>{s === "Paid" ? "Lunas" : s === "Cancelled" ? "Dibatalkan" : s}</option>
               ))}
             </select>
 
@@ -179,26 +195,24 @@ function TicketCard({
   ticket,
   showCustomer,
 }: {
-  ticket: TicketData;
+  ticket: TicketFromAPI;
   showCustomer: boolean;
+  key?: React.Key;
 }) {
-  const order = getOrder(ticket.order_id);
-  const customer = order ? getCustomer(order.customer_id) : null;
-  const event = order ? getEvent(order.event_id) : null;
-  const category = getCategory(ticket.tcategory_id);
-  const venue = event ? getVenue(event.venue_id) : null;
-  const seatLabel = getSeatLabel(ticket.ticket_id);
-  const statusStyle = STATUS_COLORS[ticket.status] ?? STATUS_COLORS["Lunas"];
+  const statusLabel = ticket.payment_status === "Paid" ? "Lunas" : ticket.payment_status === "Cancelled" ? "Dibatalkan" : ticket.payment_status;
+  const statusStyle = STATUS_COLORS[ticket.payment_status] ?? STATUS_COLORS["Paid"];
+  
+  const seatLabel = ticket.seat_id ? `Section ${ticket.seat_section}, Baris ${ticket.seat_row}, No. ${ticket.seat_number}` : null;
 
   return (
     <div className="bg-white border-2 border-black shadow-[4px_4px_0_0_#000] hover:shadow-[6px_6px_0_0_#000] hover:-translate-y-0.5 transition-all duration-150 flex flex-col">
       {/* Card top accent — color coded by status */}
       <div
         className={`h-[5px] border-b-2 border-black ${
-          ticket.status === "Lunas"
+          ticket.payment_status === "Paid"
             ? "bg-green-500"
-            : ticket.status === "Digunakan"
-            ? "bg-blue-500"
+            : ticket.payment_status === "Pending"
+            ? "bg-yellow-500"
             : "bg-red-500"
         }`}
       />
@@ -215,7 +229,7 @@ function TicketCard({
           <span
             className={`font-head text-[0.6rem] tracking-[0.1em] uppercase px-2.5 py-1 border-2 ${statusStyle.bg} ${statusStyle.text} ${statusStyle.border}`}
           >
-            {ticket.status}
+            {statusLabel}
           </span>
         </div>
 
@@ -225,7 +239,7 @@ function TicketCard({
             Event
           </p>
           <span className="font-head text-[0.65rem] uppercase bg-[#ffdb33] border-2 border-black px-2.5 py-1 inline-block">
-            {event?.event_title ?? "—"}
+            {ticket.event_title ?? "—"}
           </span>
         </div>
 
@@ -236,7 +250,7 @@ function TicketCard({
               Kategori
             </p>
             <p className="text-sm font-semibold text-black">
-              {category?.category_name ?? "—"}
+              {ticket.category_name ?? "—"}
             </p>
           </div>
           <div className="text-right">
@@ -244,7 +258,7 @@ function TicketCard({
               Harga
             </p>
             <p className="text-sm font-bold text-black">
-              Rp {category?.price.toLocaleString("id-ID") ?? "—"}
+              Rp {Number(ticket.category_price).toLocaleString("id-ID")}
             </p>
           </div>
         </div>
@@ -255,7 +269,7 @@ function TicketCard({
             <p className="font-head text-[0.55rem] tracking-[0.1em] uppercase text-gray-500 mb-0.5">
               Venue
             </p>
-            <p className="text-xs text-black">{venue?.venue_name ?? "—"}</p>
+            <p className="text-xs text-black">{ticket.venue_name ?? "—"}</p>
           </div>
           {seatLabel && (
             <div className="text-right">
@@ -268,12 +282,12 @@ function TicketCard({
         </div>
 
         {/* Row 5: Customer (admin/organizer only) */}
-        {showCustomer && customer && (
+        {showCustomer && ticket.customer_name && (
           <div className="border-t-2 border-dashed border-gray-300 pt-3 mt-auto">
             <p className="font-head text-[0.55rem] tracking-[0.1em] uppercase text-gray-500 mb-0.5">
               Pelanggan
             </p>
-            <p className="text-sm font-semibold text-black">{customer.full_name}</p>
+            <p className="text-sm font-semibold text-black">{ticket.customer_name}</p>
           </div>
         )}
 
@@ -283,7 +297,7 @@ function TicketCard({
             {ticket.order_id}
           </span>
           <span className="text-[0.65rem] text-gray-500">
-            {new Date(ticket.created_at).toLocaleDateString("id-ID", {
+            {new Date(ticket.order_date).toLocaleDateString("id-ID", {
               day: "numeric",
               month: "short",
               year: "numeric",

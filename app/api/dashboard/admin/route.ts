@@ -32,7 +32,7 @@ export async function GET() {
       query(
         "SELECT discount_type, COUNT(*)::int AS count FROM PROMOTION WHERE CURRENT_DATE BETWEEN start_date AND end_date GROUP BY discount_type"
       ),
-      query("SELECT COUNT(*)::int AS count FROM ORDER_PROMOTION"),
+      query("SELECT COUNT(*)::int AS count FROM order_promotion"),
       query("SELECT COUNT(*)::int AS count FROM VENUE"),
       query("SELECT COUNT(DISTINCT venue_id)::int AS count FROM SEAT"),
       query("SELECT COALESCE(MAX(capacity), 0) AS max_capacity FROM VENUE"),

@@ -372,17 +372,17 @@ export default function EventManager({ role }: { role: string; userId?: string }
                 <div className="p-6 overflow-y-auto space-y-6 flex-1">
                   <div className="space-y-2">
                     <label className="font-bold text-sm tracking-widest uppercase text-zinc-600">Judul Acara</label>
-                    <Input required placeholder="cth. Konser Melodi Senja" value={formData.event_title} onChange={(e) => setFormData({ ...formData, event_title: e.target.value })} className="border-2 border-black bg-white" />
+                    <Input required placeholder="cth. Konser Melodi Senja" value={formData.event_title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, event_title: e.target.value })} className="border-2 border-black bg-white" />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="font-bold text-sm tracking-widest uppercase text-zinc-600">Tanggal</label>
-                      <Input type="date" required value={formData.event_date} onChange={(e) => setFormData({ ...formData, event_date: e.target.value })} className="border-2 border-black bg-white" />
+                      <Input type="date" required value={formData.event_date} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, event_date: e.target.value })} className="border-2 border-black bg-white" />
                     </div>
                     <div className="space-y-2">
                       <label className="font-bold text-sm tracking-widest uppercase text-zinc-600">Waktu</label>
-                      <Input type="time" required value={formData.event_time} onChange={(e) => setFormData({ ...formData, event_time: e.target.value })} className="border-2 border-black bg-white" />
+                      <Input type="time" required value={formData.event_time} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, event_time: e.target.value })} className="border-2 border-black bg-white" />
                     </div>
                   </div>
 
@@ -428,23 +428,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
                         </span>
                       ))}
                     </div>
-                    <div className="flex gap-2">
-                      <select
-                        value={selectedArtistId}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setSelectedArtistId(e.target.value)}
-                        className="w-full flex h-10 rounded-md bg-white border-2 border-black px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black"
-                      >
-                        <option value="">Pilih Artist...</option>
-                        {artistOptions.map((artist) => (
-                          <option key={artist.id} value={artist.id}>
-                            {artist.name}
-                          </option>
-                        ))}
-                      </select>
-                      <Button type="button" onClick={handleAddArtist} className="border-2 border-black bg-white text-black font-bold">
-                        Tambah
-                      </Button>
-                    </div>
+                    <Input placeholder="Ketik artis dan tekan Enter" value={artistInput} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setArtistInput(e.target.value)} onKeyDown={handleAddArtist} className="border-2 border-black bg-white" />
                   </div>
 
                   <div className="space-y-2">
@@ -453,7 +437,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
                       {formData.ticket_categories.map((cat) => (
                         <div key={cat.id} className="flex flex-col gap-2 relative border-b border-zinc-300 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0">
                           <div className="flex gap-2">
-                            <Input placeholder="Nama Kategori" value={cat.name} onChange={(e) => handleCategoryChange(cat.id, "name", e.target.value)} className="flex-1 bg-white border-2 border-black h-9" />
+                            <Input placeholder="Nama Kategori" value={cat.name} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCategoryChange(cat.id, "name", e.target.value)} className="flex-1 bg-white border-2 border-black h-9" />
                             <button type="button" onClick={() => handleRemoveCategory(cat.id)} className="text-destructive hover:text-red-600 self-center">
                               <div className="w-6 h-6 border-2 border-black bg-white shadow-[2px_2px_0_#000] flex items-center justify-center">
                                 <X size={14} />
@@ -461,8 +445,8 @@ export default function EventManager({ role }: { role: string; userId?: string }
                             </button>
                           </div>
                           <div className="flex gap-2">
-                            <Input type="number" placeholder="Harga" value={cat.price || ""} onChange={(e) => handleCategoryChange(cat.id, "price", Number(e.target.value) || 0)} className="flex-1 bg-white border-2 border-black h-9" />
-                            <Input type="number" placeholder="Kapasitas" value={cat.capacity || ""} onChange={(e) => handleCategoryChange(cat.id, "capacity", Number(e.target.value) || 0)} className="flex-1 bg-white border-2 border-black h-9" />
+                            <Input type="number" placeholder="Harga" value={cat.price || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCategoryChange(cat.id, "price", Number(e.target.value) || 0)} className="flex-1 bg-white border-2 border-black h-9" />
+                            <Input type="number" placeholder="Kapasitas" value={cat.capacity || ""} onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleCategoryChange(cat.id, "capacity", Number(e.target.value) || 0)} className="flex-1 bg-white border-2 border-black h-9" />
                           </div>
                         </div>
                       ))}

@@ -59,7 +59,7 @@ export default function ArtistForm({ artist, onSave }: any) {
                     className={`w-full px-3 py-2.5 border-2 bg-[#f9f6ef] text-black font-sans text-sm outline-none focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000] ${nameError ? "border-red-500 shadow-[3px_3px_0_0_#e63946]" : "border-black"}`}
                     placeholder="Contoh: NIKI"
                     value={name}
-                    onChange={(e) => {
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                       setName(e.target.value);
                       if (e.target.value.trim()) setNameError(false);
                     }}
@@ -72,7 +72,7 @@ export default function ArtistForm({ artist, onSave }: any) {
                     className="w-full px-3 py-2.5 border-2 border-black bg-[#f9f6ef] text-black font-sans text-sm outline-none focus:bg-[#ffdb33] focus:shadow-[3px_3px_0_0_#000]"
                     placeholder="Contoh: Pop, Rock"
                     value={genre}
-                    onChange={(e) => setGenre(e.target.value)}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGenre(e.target.value)}
                   />
                 </div>
               </div>

@@ -4,6 +4,17 @@ import { requireDashboardRoles } from "@/lib/dashboard";
 
 const allowedManageRoles = ["admin", "organizer"] as const;
 
+function getPgErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+}
+
+function isPgError(error: unknown): error is { code?: string; message?: string } {
+  return typeof error === "object" && error !== null && "code" in error;
+}
+
 export async function GET() {
   try {
     const result = await query(`
@@ -61,9 +72,18 @@ export async function POST(request: Request) {
     );
 
     return Response.json(result.rows[0], { status: 201 });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Error POST Venue:", error);
-    return Response.json({ error: "Gagal menambahkan venue" }, { status: 500 });
+    if (isPgError(error) && error.code === "23505") {
+      return Response.json(
+        { error: getPgErrorMessage(error, "Venue ini sudah terdaftar di kota yang sama.") },
+        { status: 409 }
+      );
+    }
+    return Response.json(
+      { error: getPgErrorMessage(error, "Gagal menambahkan venue") },
+      { status: 500 }
+    );
   }
 }
 
@@ -99,17 +119,27 @@ export async function PUT(request: Request) {
     }
 
     return Response.json(result.rows[0], { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error PUT Venue:", error);
 
-    if (error.code === "23503") {
+    if (isPgError(error) && error.code === "23503") {
       return Response.json(
-        { error: "Gagal mengupdate venue karena masih dipakai oleh data lain" },
+        { error: getPgErrorMessage(error, "Gagal mengupdate venue karena masih dipakai oleh data lain.") },
         { status: 409 }
       );
     }
 
-    return Response.json({ error: "Gagal mengupdate venue" }, { status: 500 });
+    if (isPgError(error) && error.code === "23505") {
+      return Response.json(
+        { error: getPgErrorMessage(error, "Venue ini sudah terdaftar di kota yang sama.") },
+        { status: 409 }
+      );
+    }
+
+    return Response.json(
+      { error: getPgErrorMessage(error, "Gagal mengupdate venue") },
+      { status: 500 }
+    );
   }
 }
 
@@ -135,16 +165,24 @@ export async function DELETE(request: Request) {
     }
 
     return Response.json({ message: "Venue berhasil dihapus" }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error DELETE Venue:", error);
 
-    if (error.code === "23503") {
+    if (isPgError(error) && error.code === "23503") {
       return Response.json(
-        { error: "Gagal menghapus venue karena masih dipakai event atau data terkait" },
+        {
+          error: getPgErrorMessage(
+            error,
+            "Gagal menghapus venue karena masih dipakai event atau data terkait."
+          ),
+        },
         { status: 409 }
       );
     }
 
-    return Response.json({ error: "Gagal menghapus venue" }, { status: 500 });
+    return Response.json(
+      { error: getPgErrorMessage(error, "Gagal menghapus venue") },
+      { status: 500 }
+    );
   }
 }

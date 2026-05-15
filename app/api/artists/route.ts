@@ -2,14 +2,17 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
 
+// MEMATIKAN CACHE: Wajib biar data tabel otomatis terupdate tanpa refresh
+export const dynamic = 'force-dynamic';
+
 // 1. READ: Mengambil semua data artist
 export async function GET() {
   try {
     const result = await query('SELECT artist_id AS id, name, genre FROM ARTIST ORDER BY name ASC');
     return NextResponse.json(result.rows, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error GET Artist:', error);
-    return NextResponse.json({ error: 'Gagal memuat daftar artis' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Gagal memuat daftar artis' }, { status: 500 });
   }
 }
 
@@ -32,11 +35,11 @@ export async function POST(request: Request) {
       [newArtistId, name, genre]
     );
     
-    // Pakai supaya mengembalikan object tunggal, bukan array
+    // PERBAIKAN: Pakai row supaya mengembalikan object tunggal, bukan array
     return NextResponse.json(result.rows, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error POST Artist:', error);
-    return NextResponse.json({ error: 'Gagal menambahkan artis' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Gagal menambahkan artis' }, { status: 500 });
   }
 }
 
@@ -60,10 +63,11 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: 'Artis tidak ditemukan' }, { status: 404 });
     }
     
+    // PERBAIKAN: Pakai row supaya mengembalikan object tunggal, bukan array
     return NextResponse.json(result.rows, { status: 200 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error PUT Artist:', error);
-    return NextResponse.json({ error: 'Gagal mengupdate artis' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Gagal mengupdate artis' }, { status: 500 });
   }
 }
 
@@ -95,6 +99,6 @@ export async function DELETE(request: Request) {
       );
     }
     
-    return NextResponse.json({ error: 'Gagal menghapus artis' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Gagal menghapus artis' }, { status: 500 });
   }
 }

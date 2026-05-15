@@ -20,6 +20,37 @@ export type AppliedPromotion = {
   discountAmount: number;
 };
 
+export type CheckoutPromotion = {
+  promotionId: string;
+  promoCode: string;
+  discountType: "PERCENTAGE" | "NOMINAL";
+  discountValue: number;
+  usageLimit: number;
+  startDate: string;
+  endDate: string;
+};
+
+export type CheckoutEvent = {
+  event_id: string;
+  event_title: string;
+  event_datetime: string;
+  venue_id: string;
+};
+
+export type CheckoutVenue = {
+  venue_id: string;
+  venue_name: string;
+  seating_type: string;
+};
+
+export type PersistedOrder = {
+  order_id: string;
+  order_date: string;
+  payment_status: PaymentStatus;
+  total_amount: number;
+  customer_id: string;
+};
+
 export type Order = {
   order_id: string;
   order_date: string;

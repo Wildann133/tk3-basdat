@@ -18,3 +18,6 @@ export type PromotionFormValues = {
   end_date: string;
   usage_limit: number;
 };
+
+/** Promotion row as returned by GET /api/promotions (`used_count` from `order_promotion` when present). */
+export type PromotionWithUsage = Promotion & { used_count: number };

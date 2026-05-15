@@ -1,19 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/retroui/Button";
 import { Card, CardContent } from "@/components/retroui/Card";
 import { Dialog } from "@/components/retroui/Dialog";
 import { Input } from "@/components/retroui/Input";
-import {
-  createPromotion,
-  deletePromotionById,
-  getAllPromotions,
-  getPromotionUsageSnapshot,
-  isPromoCodeUnique,
-  updatePromotionById,
-} from "@/lib/promotionStore";
-import { Promotion, PromotionFormValues } from "@/lib/types/promotion";
+import { fetchJson } from "@/lib/api";
+import { PromotionFormValues, PromotionWithUsage } from "@/lib/types/promotion";
 
 const defaultFormValues: PromotionFormValues = {
   promo_code: "",
@@ -24,9 +17,11 @@ const defaultFormValues: PromotionFormValues = {
   usage_limit: 1,
 };
 
-type UserRole = "admin" | "organizer" | "customer" | "guest";
+type UserRole = "guest" | "admin" | "organizer" | "customer";
 
-const formatDiscountLabel = (promotion: Promotion) => {
+const tableColumnCount = 6;
+
+const formatDiscountLabel = (promotion: PromotionWithUsage) => {
   if (promotion.discount_type === "PERCENTAGE") {
     return `${promotion.discount_value}%`;
   }
@@ -37,48 +32,87 @@ const formatDiscountLabel = (promotion: Promotion) => {
   }).format(promotion.discount_value);
 };
 
+function isPromoCodeUniqueInList(
+  list: PromotionWithUsage[],
+  promoCode: string,
+  excludePromotionId?: string
+) {
+  const normalized = promoCode.trim().toLowerCase();
+  return !list.some(
+    (promotion) =>
+      promotion.promo_code.toLowerCase() === normalized &&
+      promotion.promotion_id !== excludePromotionId
+  );
+}
+
 function validatePromotionForm(
   values: PromotionFormValues,
+  list: PromotionWithUsage[],
   excludePromotionId?: string
 ) {
   if (!values.promo_code.trim()) {
-    return "Promo Code wajib diisi.";
+    return "Kode promo wajib diisi.";
   }
-  if (!isPromoCodeUnique(values.promo_code, excludePromotionId)) {
-    return "Promo Code harus unik.";
+  if (!isPromoCodeUniqueInList(list, values.promo_code, excludePromotionId)) {
+    return "Kode promo harus unik.";
   }
   if (values.discount_value <= 0) {
-    return "Discount Value harus lebih dari 0.";
+    return "Nilai diskon harus lebih dari 0.";
+  }
+  if (values.discount_type === "PERCENTAGE" && values.discount_value > 100) {
+    return "Diskon persentase tidak boleh lebih dari 100.";
   }
   if (!values.start_date) {
-    return "Start Date wajib diisi.";
+    return "Tanggal mulai wajib diisi.";
   }
   if (!values.end_date) {
-    return "End Date wajib diisi.";
+    return "Tanggal berakhir wajib diisi.";
   }
   if (values.end_date < values.start_date) {
-    return "End Date harus sama atau setelah Start Date.";
+    return "Tanggal berakhir harus sama atau setelah tanggal mulai.";
   }
   if (!Number.isInteger(values.usage_limit) || values.usage_limit <= 0) {
-    return "Usage Limit harus bilangan bulat lebih dari 0.";
+    return "Batas penggunaan harus bilangan bulat lebih dari 0.";
   }
   return null;
 }
 
 export default function PromotionsClient({ role }: { role: UserRole }) {
-  const [promotions, setPromotions] = useState<Promotion[]>(() => getAllPromotions());
+  const [promotions, setPromotions] = useState<PromotionWithUsage[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [discountTypeFilter, setDiscountTypeFilter] = useState<
     "All" | "PERCENTAGE" | "NOMINAL"
   >("All");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [promotionForUpdate, setPromotionForUpdate] = useState<Promotion | null>(null);
-  const [promotionForDelete, setPromotionForDelete] = useState<Promotion | null>(null);
+  const [promotionForUpdate, setPromotionForUpdate] = useState<PromotionWithUsage | null>(null);
+  const [promotionForDelete, setPromotionForDelete] = useState<PromotionWithUsage | null>(null);
   const [createForm, setCreateForm] = useState<PromotionFormValues>(defaultFormValues);
   const [updateForm, setUpdateForm] = useState<PromotionFormValues>(defaultFormValues);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const isAdmin = role === "admin";
+  const tableColSpan = isAdmin ? tableColumnCount + 1 : tableColumnCount;
+
+  const loadPromotions = useCallback(async () => {
+    setLoading(true);
+    setErrorMessage(null);
+    try {
+      const data = await fetchJson<PromotionWithUsage[]>("/api/promotions");
+      setPromotions(data);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Gagal memuat daftar promosi."
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadPromotions();
+  }, [loadPromotions]);
 
   const filteredPromotions = useMemo(() => {
     return promotions.filter((promotion) => {
@@ -91,29 +125,14 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
     });
   }, [promotions, searchQuery, discountTypeFilter]);
 
-  const usageByPromotionId = useMemo(() => {
-    const usageMap = new Map<string, number>();
-    getPromotionUsageSnapshot(promotions).forEach((usage) =>
-      usageMap.set(usage.promotion_id, usage.used_count)
-    );
-    return usageMap;
-  }, [promotions]);
-
   const summary = useMemo(() => {
     const totalPromotions = promotions.length;
-    const totalUsage = getPromotionUsageSnapshot(promotions).reduce(
-      (total, usage) => total + usage.used_count,
-      0
-    );
+    const totalUsage = promotions.reduce((total, promotion) => total + promotion.used_count, 0);
     const totalPercentageTypePromotions = promotions.filter(
       (promotion) => promotion.discount_type === "PERCENTAGE"
     ).length;
     return { totalPromotions, totalUsage, totalPercentageTypePromotions };
   }, [promotions]);
-
-  const refreshPromotions = () => {
-    setPromotions(getAllPromotions());
-  };
 
   const updateCreateField = <K extends keyof PromotionFormValues>(
     key: K,
@@ -141,7 +160,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
     setIsCreateOpen(false);
   };
 
-  const openUpdateModal = (promotion: Promotion) => {
+  const openUpdateModal = (promotion: PromotionWithUsage) => {
     if (!isAdmin) return;
     setPromotionForUpdate(promotion);
     setUpdateForm({
@@ -160,7 +179,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
     setPromotionForUpdate(null);
   };
 
-  const openDeleteModal = (promotion: Promotion) => {
+  const openDeleteModal = (promotion: PromotionWithUsage) => {
     if (!isAdmin) return;
     setPromotionForDelete(promotion);
     setErrorMessage(null);
@@ -171,30 +190,42 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
     setPromotionForDelete(null);
   };
 
-  const handleCreatePromotion = () => {
+  const handleCreatePromotion = async () => {
     if (!isAdmin) return;
-    const validationMessage = validatePromotionForm(createForm);
+    const validationMessage = validatePromotionForm(createForm, promotions);
     if (validationMessage) {
       setErrorMessage(validationMessage);
       return;
     }
 
-    createPromotion({
-      ...createForm,
-      promo_code: createForm.promo_code.trim(),
-    });
-    refreshPromotions();
-    setIsCreateOpen(false);
-    setErrorMessage(null);
-    setSuccessMessage("Promotion berhasil dibuat.");
+    setActionLoading(true);
+    try {
+      await fetchJson<PromotionWithUsage>("/api/promotions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...createForm,
+          promo_code: createForm.promo_code.trim(),
+        }),
+      });
+      await loadPromotions();
+      setIsCreateOpen(false);
+      setErrorMessage(null);
+      setSuccessMessage("Promosi berhasil dibuat.");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Gagal membuat promosi.");
+    } finally {
+      setActionLoading(false);
+    }
   };
 
-  const handleUpdatePromotion = () => {
+  const handleUpdatePromotion = async () => {
     if (!isAdmin) return;
     if (!promotionForUpdate) return;
 
     const validationMessage = validatePromotionForm(
       updateForm,
+      promotions,
       promotionForUpdate.promotion_id
     );
     if (validationMessage) {
@@ -202,32 +233,47 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
       return;
     }
 
-    const updated = updatePromotionById(promotionForUpdate.promotion_id, {
-      ...updateForm,
-      promo_code: updateForm.promo_code.trim(),
-    });
-    if (!updated) {
-      setErrorMessage("Promotion tidak ditemukan.");
-      return;
+    setActionLoading(true);
+    try {
+      await fetchJson<PromotionWithUsage>("/api/promotions", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          promotion_id: promotionForUpdate.promotion_id,
+          ...updateForm,
+          promo_code: updateForm.promo_code.trim(),
+        }),
+      });
+      await loadPromotions();
+      setPromotionForUpdate(null);
+      setErrorMessage(null);
+      setSuccessMessage("Promosi berhasil diperbarui.");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Gagal memperbarui promosi.");
+    } finally {
+      setActionLoading(false);
     }
-    refreshPromotions();
-    setPromotionForUpdate(null);
-    setErrorMessage(null);
-    setSuccessMessage("Promotion berhasil diperbarui.");
   };
 
-  const handleDeletePromotion = () => {
+  const handleDeletePromotion = async () => {
     if (!isAdmin) return;
     if (!promotionForDelete) return;
-    const deleted = deletePromotionById(promotionForDelete.promotion_id);
-    if (!deleted) {
-      setErrorMessage("Promotion tidak ditemukan.");
-      return;
+
+    setActionLoading(true);
+    try {
+      await fetchJson<{ message: string }>(
+        `/api/promotions?id=${encodeURIComponent(promotionForDelete.promotion_id)}`,
+        { method: "DELETE" }
+      );
+      await loadPromotions();
+      setPromotionForDelete(null);
+      setErrorMessage(null);
+      setSuccessMessage("Promosi berhasil dihapus.");
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "Gagal menghapus promosi.");
+    } finally {
+      setActionLoading(false);
     }
-    refreshPromotions();
-    setPromotionForDelete(null);
-    setErrorMessage(null);
-    setSuccessMessage("Promotion berhasil dihapus.");
   };
 
   return (
@@ -243,7 +289,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
         </div>
         {isAdmin && (
           <Button className="font-bold" onClick={openCreateModal}>
-            + Create Promo
+            + Buat Promo
           </Button>
         )}
       </div>
@@ -252,7 +298,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
         <Card className="border-4 border-black shadow-[6px_6px_0_0_#000]">
           <CardContent className="p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-zinc-600">
-              Total Promotions
+              Total Promo
             </p>
             <p className="text-2xl font-black font-head">{summary.totalPromotions}</p>
           </CardContent>
@@ -260,7 +306,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
         <Card className="border-4 border-black shadow-[6px_6px_0_0_#000]">
           <CardContent className="p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-zinc-600">
-              Total Usage of All Promotions
+              Total penggunaan semua promo
             </p>
             <p className="text-2xl font-black font-head">{summary.totalUsage}</p>
           </CardContent>
@@ -268,7 +314,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
         <Card className="border-4 border-black shadow-[6px_6px_0_0_#000]">
           <CardContent className="p-4">
             <p className="text-xs font-bold uppercase tracking-wider text-zinc-600">
-              Total Percentage-Type Promotions
+              Total tipe persentase
             </p>
             <p className="text-2xl font-black font-head">
               {summary.totalPercentageTypePromotions}
@@ -294,22 +340,22 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <Input
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
-              placeholder="Cari berdasarkan Promo Code..."
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) => setSearchQuery(event.target.value)}
+              placeholder="Cari berdasarkan kode promo..."
               className="border-2 border-black font-bold"
             />
             <select
               value={discountTypeFilter}
-              onChange={(event) =>
+              onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
                 setDiscountTypeFilter(
                   event.target.value as "All" | "PERCENTAGE" | "NOMINAL"
                 )
               }
               className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold"
             >
-              <option value="All">All</option>
-              <option value="PERCENTAGE">Percentage</option>
-              <option value="NOMINAL">Fixed Amount</option>
+              <option value="All">Semua</option>
+              <option value="PERCENTAGE">Persentase</option>
+              <option value="NOMINAL">Nominal</option>
             </select>
           </div>
 
@@ -318,25 +364,22 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
               <thead>
                 <tr className="bg-zinc-100 border-b-2 border-black">
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Promotion ID
+                    Kode Promo
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Promo Code
+                    Tipe Diskon
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Discount Type
+                    Nilai Diskon
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Discount Value
+                    Tanggal Mulai
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Start Date
+                    Tanggal Berakhir
                   </th>
                   <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    End Date
-                  </th>
-                  <th className="p-3 text-xs font-black uppercase tracking-wider">
-                    Usage
+                    Penggunaan
                   </th>
                   {isAdmin && (
                     <th className="p-3 text-xs font-black uppercase tracking-wider">
@@ -346,11 +389,20 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
                 </tr>
               </thead>
               <tbody>
-                {filteredPromotions.length === 0 ? (
+                {loading ? (
                   <tr>
                     <td
                       className="p-4 text-sm font-bold text-zinc-600"
-                      colSpan={isAdmin ? 8 : 7}
+                      colSpan={tableColSpan}
+                    >
+                      Memuat data promosi...
+                    </td>
+                  </tr>
+                ) : filteredPromotions.length === 0 ? (
+                  <tr>
+                    <td
+                      className="p-4 text-sm font-bold text-zinc-600"
+                      colSpan={tableColSpan}
                     >
                       Tidak ada data promosi.
                     </td>
@@ -361,12 +413,9 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
                       key={promotion.promotion_id}
                       className="border-b border-black/20"
                     >
-                      <td className="p-3 text-sm font-bold">{promotion.promotion_id}</td>
                       <td className="p-3 text-sm font-bold">{promotion.promo_code}</td>
                       <td className="p-3 text-sm font-bold">
-                        {promotion.discount_type === "PERCENTAGE"
-                          ? "Percentage"
-                          : "Fixed Amount"}
+                        {promotion.discount_type === "PERCENTAGE" ? "Persentase" : "Nominal"}
                       </td>
                       <td className="p-3 text-sm font-bold">
                         {formatDiscountLabel(promotion)}
@@ -374,8 +423,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
                       <td className="p-3 text-sm font-bold">{promotion.start_date}</td>
                       <td className="p-3 text-sm font-bold">{promotion.end_date}</td>
                       <td className="p-3 text-sm font-bold">
-                        {usageByPromotionId.get(promotion.promotion_id) ?? 0}/
-                        {promotion.usage_limit}
+                        {promotion.used_count}/{promotion.usage_limit}
                       </td>
                       {isAdmin && (
                         <td className="p-3 text-sm font-bold">
@@ -408,7 +456,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
 
       <Dialog open={isAdmin && isCreateOpen} onOpenChange={setIsCreateOpen}>
         <Dialog.Content size="lg" className="border-4 border-black">
-          <Dialog.Header className="font-black text-lg">Create Promotion</Dialog.Header>
+          <Dialog.Header className="font-black text-lg">Buat Promosi</Dialog.Header>
           <div className="p-6 space-y-4">
             <PromotionForm
               values={createForm}
@@ -422,12 +470,18 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
               type="button"
               variant="outline"
               className="border-2 border-black font-bold"
+              disabled={actionLoading}
               onClick={closeCreateModal}
             >
-              Cancel
+              Batal
             </Button>
-            <Button type="button" className="font-bold" onClick={handleCreatePromotion}>
-              Create
+            <Button
+              type="button"
+              className="font-bold"
+              disabled={actionLoading}
+              onClick={() => void handleCreatePromotion()}
+            >
+              {actionLoading ? "Menyimpan..." : "Buat"}
             </Button>
           </Dialog.Footer>
         </Dialog.Content>
@@ -440,7 +494,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
         }}
       >
         <Dialog.Content size="lg" className="border-4 border-black">
-          <Dialog.Header className="font-black text-lg">Update Promotion</Dialog.Header>
+          <Dialog.Header className="font-black text-lg">Perbarui Promosi</Dialog.Header>
           <div className="p-6 space-y-4">
             <PromotionForm
               values={updateForm}
@@ -454,12 +508,18 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
               type="button"
               variant="outline"
               className="border-2 border-black font-bold"
+              disabled={actionLoading}
               onClick={closeUpdateModal}
             >
-              Cancel
+              Batal
             </Button>
-            <Button type="button" className="font-bold" onClick={handleUpdatePromotion}>
-              Save
+            <Button
+              type="button"
+              className="font-bold"
+              disabled={actionLoading}
+              onClick={() => void handleUpdatePromotion()}
+            >
+              {actionLoading ? "Menyimpan..." : "Simpan"}
             </Button>
           </Dialog.Footer>
         </Dialog.Content>
@@ -472,7 +532,7 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
         }}
       >
         <Dialog.Content size="sm" className="border-4 border-black">
-          <Dialog.Header className="font-black text-lg">Delete Promotion</Dialog.Header>
+          <Dialog.Header className="font-black text-lg">Hapus Promosi</Dialog.Header>
           <div className="p-6 space-y-2">
             <p className="font-bold">
               Yakin ingin menghapus promo{" "}
@@ -487,16 +547,18 @@ export default function PromotionsClient({ role }: { role: UserRole }) {
               type="button"
               variant="outline"
               className="border-2 border-black font-bold"
+              disabled={actionLoading}
               onClick={closeDeleteModal}
             >
-              Cancel
+              Batal
             </Button>
             <Button
               type="button"
               className="font-bold bg-red-500 hover:bg-red-600"
-              onClick={handleDeletePromotion}
+              disabled={actionLoading}
+              onClick={() => void handleDeletePromotion()}
             >
-              Delete
+              {actionLoading ? "Menghapus..." : "Hapus"}
             </Button>
           </Dialog.Footer>
         </Dialog.Content>
@@ -521,7 +583,7 @@ function PromotionForm(props: {
       {mode === "update" && (
         <div className="space-y-2">
           <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-            Promotion ID
+            ID Promosi
           </label>
           <Input
             readOnly
@@ -532,22 +594,22 @@ function PromotionForm(props: {
       )}
       <div className="space-y-2">
         <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-          Promo Code *
+          Kode Promo *
         </label>
         <Input
           value={values.promo_code}
-          onChange={(event) => onChange("promo_code", event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("promo_code", event.target.value)}
           className="border-2 border-black font-bold"
         />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-            Discount Type *
+            Tipe Diskon *
           </label>
           <select
             value={values.discount_type}
-            onChange={(event) =>
+            onChange={(event: React.ChangeEvent<HTMLSelectElement>) =>
               onChange(
                 "discount_type",
                 event.target.value as PromotionFormValues["discount_type"]
@@ -555,20 +617,20 @@ function PromotionForm(props: {
             }
             className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold"
           >
-            <option value="PERCENTAGE">Percentage</option>
-            <option value="NOMINAL">Fixed Amount</option>
+            <option value="PERCENTAGE">Persentase</option>
+            <option value="NOMINAL">Nominal</option>
           </select>
         </div>
         <div className="space-y-2">
           <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-            Discount Value *
+            Nilai Diskon *
           </label>
           <Input
             type="number"
             min={1}
             step={1}
             value={Number.isNaN(values.discount_value) ? "" : values.discount_value}
-            onChange={(event) =>
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
               onChange("discount_value", Number(event.target.value))
             }
             className="border-2 border-black font-bold"
@@ -578,37 +640,37 @@ function PromotionForm(props: {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-            Start Date *
+            Tanggal Mulai *
           </label>
           <Input
             type="date"
             value={values.start_date}
-            onChange={(event) => onChange("start_date", event.target.value)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("start_date", event.target.value)}
             className="border-2 border-black font-bold"
           />
         </div>
         <div className="space-y-2">
           <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-            End Date *
+            Tanggal Berakhir *
           </label>
           <Input
             type="date"
             value={values.end_date}
-            onChange={(event) => onChange("end_date", event.target.value)}
+            onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("end_date", event.target.value)}
             className="border-2 border-black font-bold"
           />
         </div>
       </div>
       <div className="space-y-2">
         <label className="font-bold text-sm uppercase tracking-wider text-zinc-600">
-          Usage Limit *
+          Batas Penggunaan *
         </label>
         <Input
           type="number"
           min={1}
           step={1}
           value={Number.isNaN(values.usage_limit) ? "" : values.usage_limit}
-          onChange={(event) => onChange("usage_limit", Number(event.target.value))}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange("usage_limit", Number(event.target.value))}
           className="border-2 border-black font-bold"
         />
       </div>
