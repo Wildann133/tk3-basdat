@@ -119,8 +119,8 @@ export default function TicketTable({ role, userId }: { role?: string; userId?: 
   const filtered = tickets
     .filter((t) => {
       // Role-based filtering for Organizer
-      if (isOrganizer && userId) {
-        const tOrgId = String(t.organizer_user_id || "").toLowerCase().trim();
+      if (isOrganizer && userId && t.organizer_user_id) {
+        const tOrgId = String(t.organizer_user_id).toLowerCase().trim();
         const curUserId = String(userId).toLowerCase().trim();
         if (tOrgId !== curUserId) return false;
       }

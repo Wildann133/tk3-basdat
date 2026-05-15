@@ -12,15 +12,9 @@ const pool = new Pool({
 async function run() {
   try {
     const res = await pool.query(`
-      SELECT 
-        org.organizer_id, 
-        org.organizer_name, 
-        org.user_id,
-        ua.username
-      FROM ORGANIZER org
-      LEFT JOIN USER_ACCOUNT ua ON ua.user_id = org.user_id
+      SELECT * FROM EVENT LIMIT 1
     `);
-    console.log(JSON.stringify(res.rows, null, 2));
+    console.log(Object.keys(res.rows[0]));
   } catch (err) {
     console.error('Error:', err);
   } finally {
