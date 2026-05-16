@@ -301,7 +301,6 @@ export async function createOrderForCustomer(
            end_date
          FROM PROMOTION
          WHERE LOWER(promo_code) = LOWER($1)
-           AND CURRENT_DATE BETWEEN start_date AND end_date
          LIMIT 1`,
         [normalizedPromoCode]
       );
@@ -346,6 +345,14 @@ export async function createOrderForCustomer(
           [ticketId, selectedSeats[i]]
         );
       }
+    }
+
+    if (promotion) {
+      await client.query(
+        `INSERT INTO ORDER_PROMOTION (order_promotion_id, order_id, promotion_id)
+         VALUES ($1, $2, $3)`,
+        [randomUUID(), orderId, promotion.promotionId]
+      );
     }
 
     await client.query('COMMIT');

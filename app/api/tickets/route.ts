@@ -102,18 +102,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
-    // Tangkap error foreign key constraint
-    if (error.code === '23503') {
+    // Tangkap error constraint DB dan teruskan pesan aslinya jika tersedia
+    if (error.code === '23503' || error.code === '23505') {
       return NextResponse.json(
-        { error: 'Data order atau kategori tiket tidak valid.' },
-        { status: 409 }
-      );
-    }
-
-    // Tangkap error unique constraint (misalnya seat sudah di-assign)
-    if (error.code === '23505') {
-      return NextResponse.json(
-        { error: 'Kursi sudah di-assign ke tiket lain.' },
+        { error: error.message || 'Data tiket tidak valid.' },
         { status: 409 }
       );
     }
@@ -164,8 +156,8 @@ export async function PUT(request: Request) {
     await client.query('ROLLBACK');
     console.error('Error PUT Ticket:', error);
 
-    if (error.code === '23505') {
-      return NextResponse.json({ error: 'Kursi sudah di-assign ke tiket lain.' }, { status: 409 });
+    if (error.code === '23505' || error.code === '23503') {
+      return NextResponse.json({ error: error.message || 'Data tiket tidak valid.' }, { status: 409 });
     }
 
     return NextResponse.json({ error: error.message || 'Gagal memperbarui tiket' }, { status: 500 });

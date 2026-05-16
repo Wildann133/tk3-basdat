@@ -2,6 +2,17 @@ import { randomUUID } from "crypto";
 import { getClient, query } from "@/lib/db";
 import { requireDashboardRoles } from "@/lib/dashboard";
 
+function getPgErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return fallback;
+}
+
+function isPgError(error: unknown): error is { code?: string; message?: string } {
+  return typeof error === "object" && error !== null && "code" in error;
+}
+
 type EventRow = {
   event_id: string;
   event_title: string;
@@ -213,14 +224,14 @@ export async function POST(request: Request) {
     } finally {
       client.release();
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error POST Event:", error);
 
-    if (error.code === "23503") {
-      return Response.json({ error: "Venue atau organizer tidak ditemukan" }, { status: 409 });
+    if (isPgError(error) && error.code === "23503") {
+      return Response.json({ error: getPgErrorMessage(error, "Venue atau organizer tidak ditemukan") }, { status: 409 });
     }
 
-    return Response.json({ error: "Gagal menambahkan event" }, { status: 500 });
+    return Response.json({ error: getPgErrorMessage(error, "Gagal menambahkan event") }, { status: 500 });
   }
 }
 
@@ -345,14 +356,14 @@ export async function PUT(request: Request) {
     } finally {
       client.release();
     }
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error PUT Event:", error);
 
-    if (error.code === "23503") {
-      return Response.json({ error: "Venue atau organizer tidak ditemukan" }, { status: 409 });
+    if (isPgError(error) && error.code === "23503") {
+      return Response.json({ error: getPgErrorMessage(error, "Venue atau organizer tidak ditemukan") }, { status: 409 });
     }
 
-    return Response.json({ error: "Gagal mengupdate event" }, { status: 500 });
+    return Response.json({ error: getPgErrorMessage(error, "Gagal mengupdate event") }, { status: 500 });
   }
 }
 
@@ -389,16 +400,21 @@ export async function DELETE(request: Request) {
     }
 
     return Response.json({ message: "Event berhasil dihapus" }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error DELETE Event:", error);
 
-    if (error.code === "23503") {
+    if (isPgError(error) && error.code === "23503") {
       return Response.json(
-        { error: "Gagal menghapus event karena masih dipakai data lain seperti tiket atau kategori tiket" },
+        {
+          error: getPgErrorMessage(
+            error,
+            "Gagal menghapus event karena masih dipakai data lain seperti tiket atau kategori tiket"
+          ),
+        },
         { status: 409 }
       );
     }
 
-    return Response.json({ error: "Gagal menghapus event" }, { status: 500 });
+    return Response.json({ error: getPgErrorMessage(error, "Gagal menghapus event") }, { status: 500 });
   }
 }

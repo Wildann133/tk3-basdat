@@ -123,16 +123,6 @@ export async function registerAction(
   try {
     await client.query("BEGIN");
 
-    const existingUser = await client.query(
-      "SELECT 1 FROM USER_ACCOUNT WHERE username = $1",
-      [username]
-    );
-
-    if (existingUser.rowCount && existingUser.rowCount > 0) {
-      await client.query("ROLLBACK");
-      return { error: "Username sudah terdaftar." };
-    }
-
     const userId = randomUUID();
     await client.query(
       "INSERT INTO USER_ACCOUNT (user_id, username, password) VALUES ($1, $2, $3)",
@@ -170,14 +160,12 @@ export async function registerAction(
 
     await client.query("COMMIT");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     await client.query("ROLLBACK");
-
-    if (error?.code === "23505") {
-      return { error: "Username sudah terdaftar." };
-    }
-
     console.error("Register Error:", error);
+    if (error instanceof Error && error.message.trim()) {
+      return { error: error.message };
+    }
     return { error: "Gagal membuat akun. Coba lagi." };
   } finally {
     client.release();

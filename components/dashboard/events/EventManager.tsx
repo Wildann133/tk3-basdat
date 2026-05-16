@@ -370,6 +370,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
             <CardContent className="p-0 flex flex-col min-h-0">
               <form onSubmit={handleSave} className="flex flex-col min-h-0 h-full">
                 <div className="p-6 overflow-y-auto space-y-6 flex-1">
+                  {error && <div className="border-2 border-red-500 bg-red-100 text-red-700 font-bold p-3 rounded-md">{error}</div>}
                   <div className="space-y-2">
                     <label className="font-bold text-sm tracking-widest uppercase text-zinc-600">Judul Acara</label>
                     <Input required placeholder="cth. Konser Melodi Senja" value={formData.event_title} onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData({ ...formData, event_title: e.target.value })} className="border-2 border-black bg-white" />
@@ -499,6 +500,7 @@ export default function EventManager({ role }: { role: string; userId?: string }
               <h2 className="text-3xl font-head font-black">Hapus Acara?</h2>
             </div>
             <CardContent className="p-6">
+              {error && <div className="mb-4 border-2 border-red-500 bg-red-100 text-red-700 font-bold p-3 rounded-md text-left">{error}</div>}
               <p className="font-bold text-zinc-600 mb-6">Tindakan ini tidak dapat dibatalkan. Data acara akan terhapus dari sistem.</p>
               <div className="flex justify-center gap-4">
                 <Button onClick={closeDeleteModal} variant="outline" className="border-2 border-black font-bold flex-1">
