@@ -132,7 +132,7 @@ export async function DELETE(request: Request) {
       error.code === "23503"
     ) {
       return Response.json(
-        { error: "Gagal menghapus order karena masih memiliki relasi data lain" },
+        { error: getErrorMessage(error, "Gagal menghapus order karena masih memiliki relasi data lain") },
         { status: 409 }
       );
     }

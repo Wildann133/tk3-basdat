@@ -111,10 +111,10 @@ export async function DELETE(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 409 });
     }
 
-    // Tangkap error foreign key constraint
+    // Tangkap error constraint DB dan teruskan pesan aslinya jika tersedia
     if (error.code === '23503') {
       return NextResponse.json(
-        { error: 'Gagal menghapus kursi karena masih terkait dengan data lain.' },
+        { error: error.message || 'Gagal menghapus kursi karena masih terkait dengan data lain.' },
         { status: 409 }
       );
     }
