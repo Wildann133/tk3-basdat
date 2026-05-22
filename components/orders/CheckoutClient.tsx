@@ -11,6 +11,7 @@ import {
   CheckoutEvent,
   CheckoutFormState,
   CheckoutPromotion,
+  CheckoutSeat,
   CheckoutVenue,
   Order,
   TicketCategory,
@@ -20,6 +21,7 @@ type CheckoutClientProps = {
   event: CheckoutEvent;
   venue: CheckoutVenue;
   ticketCategories: TicketCategory[];
+  availableSeats: CheckoutSeat[];
   promotions: CheckoutPromotion[];
 };
 
@@ -30,23 +32,17 @@ const formatRupiah = (value: number) =>
     minimumFractionDigits: 0,
   }).format(value);
 
-function parseSeats(seatsInput: string) {
-  return seatsInput
-    .split(",")
-    .map((seat) => seat.trim())
-    .filter(Boolean);
-}
-
 export default function CheckoutClient({
   event,
   venue,
   ticketCategories,
+  availableSeats,
   promotions,
 }: CheckoutClientProps) {
   const [formState, setFormState] = useState<CheckoutFormState>({
     ticketCategoryId: "",
     quantity: 1,
-    seatsInput: "",
+    selectedSeatIds: [],
     promoCodeInput: "",
   });
   const [appliedPromoCode, setAppliedPromoCode] = useState("");
@@ -108,6 +104,31 @@ export default function CheckoutClient({
     [appliedPromoCode, calculateDiscountedTotal]
   );
   const isReservedSeating = venue.seating_type === "reserved seating";
+  const selectedSeatCount = formState.selectedSeatIds.filter(Boolean).length;
+
+  const getSeatLabel = (seat: CheckoutSeat) =>
+    `${seat.section} - Baris ${seat.row} - No. ${seat.number}`;
+
+  const handleQuantityChange = (quantityValue: number) => {
+    const nextQuantity = Number.isInteger(quantityValue) ? quantityValue : 1;
+    setFormState((prev) => ({
+      ...prev,
+      quantity: nextQuantity,
+      selectedSeatIds: prev.selectedSeatIds.slice(0, Math.max(0, nextQuantity)),
+    }));
+  };
+
+  const handleSeatChange = (index: number, seatId: string) => {
+    setFormState((prev) => {
+      const nextSeatIds = [...prev.selectedSeatIds];
+      nextSeatIds[index] = seatId;
+      return {
+        ...prev,
+        selectedSeatIds: nextSeatIds,
+      };
+    });
+    setErrorMessage("");
+  };
 
   const handleApplyPromo = () => {
     const rawCode = formState.promoCodeInput.trim();
@@ -163,10 +184,17 @@ export default function CheckoutClient({
       return;
     }
 
-    const selectedSeats = parseSeats(formState.seatsInput);
-    if (isReservedSeating && selectedSeats.length > formState.quantity) {
-      setErrorMessage("Jumlah kursi yang dipilih tidak boleh melebihi jumlah tiket.");
-      return;
+    const selectedSeats = formState.selectedSeatIds.filter(Boolean);
+    if (isReservedSeating) {
+      if (selectedSeats.length !== formState.quantity) {
+        setErrorMessage("Pilih kursi sesuai jumlah tiket.");
+        return;
+      }
+
+      if (new Set(selectedSeats).size !== selectedSeats.length) {
+        setErrorMessage("Kursi yang dipilih tidak boleh duplikat.");
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -178,7 +206,7 @@ export default function CheckoutClient({
           event_id: event.event_id,
           ticket_category_id: selectedCategory.id,
           quantity: formState.quantity,
-          seats_input: formState.seatsInput,
+          seats_input: selectedSeats.join(","),
           promo_code: appliedPromotion?.promoCode ?? "",
         }),
       });
@@ -310,10 +338,7 @@ export default function CheckoutClient({
                 step={1}
                 value={formState.quantity}
                 onChange={(eventChange: React.ChangeEvent<HTMLInputElement>) =>
-                  setFormState((prev) => ({
-                    ...prev,
-                    quantity: Number(eventChange.target.value),
-                  }))
+                  handleQuantityChange(Number(eventChange.target.value))
                 }
                 className="border-2 border-black font-bold"
                 required
@@ -321,21 +346,44 @@ export default function CheckoutClient({
             </div>
 
             {isReservedSeating && (
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <label className="font-bold text-sm uppercase tracking-wider">
-                  Pilih Kursi (Opsional)
+                  Pilih Kursi *
                 </label>
-                <Input
-                  placeholder="Contoh: A1, A2, A3"
-                  value={formState.seatsInput}
-                  onChange={(eventChange: React.ChangeEvent<HTMLInputElement>) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      seatsInput: eventChange.target.value,
-                    }))
-                  }
-                  className="border-2 border-black font-bold"
-                />
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {Array.from({ length: Math.max(0, formState.quantity) }).map((_, index) => {
+                    const currentSeatId = formState.selectedSeatIds[index] ?? "";
+                    const selectedByOtherDropdown = new Set(
+                      formState.selectedSeatIds.filter((seatId, seatIndex) => seatId && seatIndex !== index)
+                    );
+
+                    return (
+                      <select
+                        key={index}
+                        required
+                        value={currentSeatId}
+                        onChange={(eventChange: React.ChangeEvent<HTMLSelectElement>) =>
+                          handleSeatChange(index, eventChange.target.value)
+                        }
+                        className="w-full h-11 px-3 border-2 border-black bg-white rounded font-bold"
+                      >
+                        <option value="">Kursi tiket #{index + 1}</option>
+                        {availableSeats.map((seat) => (
+                          <option
+                            key={seat.seatId}
+                            value={seat.seatId}
+                            disabled={selectedByOtherDropdown.has(seat.seatId)}
+                          >
+                            {getSeatLabel(seat)}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  })}
+                </div>
+                <p className="text-xs font-bold text-zinc-600">
+                  {selectedSeatCount}/{formState.quantity} kursi dipilih dari {availableSeats.length} kursi tersedia.
+                </p>
               </div>
             )}
 

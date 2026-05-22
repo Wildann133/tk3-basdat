@@ -11,8 +11,15 @@ export type TicketCategory = {
 export type CheckoutFormState = {
   ticketCategoryId: string;
   quantity: number;
-  seatsInput: string;
+  selectedSeatIds: string[];
   promoCodeInput: string;
+};
+
+export type CheckoutSeat = {
+  seatId: string;
+  section: string;
+  row: string;
+  number: string;
 };
 
 export type AppliedPromotion = {

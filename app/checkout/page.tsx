@@ -35,6 +35,7 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
       event={checkoutData.event}
       venue={checkoutData.venue}
       ticketCategories={checkoutData.ticketCategories}
+      availableSeats={checkoutData.availableSeats}
       promotions={checkoutData.promotions}
     />
   );

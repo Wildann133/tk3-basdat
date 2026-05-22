@@ -3,6 +3,7 @@ import { query, getClient } from "@/lib/db";
 import type {
   CheckoutEvent,
   CheckoutPromotion,
+  CheckoutSeat,
   CheckoutVenue,
   Order,
   PaymentStatus,
@@ -37,6 +38,13 @@ type TicketCategoryRow = {
   remaining_capacity: string | number;
 };
 
+type CheckoutSeatRow = {
+  seat_id: string;
+  section: string;
+  row_number: string;
+  seat_number: string;
+};
+
 type PromotionRow = {
   promotion_id: string;
   promo_code: string;
@@ -60,6 +68,7 @@ export type CheckoutPageData = {
   event: CheckoutEvent;
   venue: CheckoutVenue;
   ticketCategories: TicketCategory[];
+  availableSeats: CheckoutSeat[];
   promotions: CheckoutPromotion[];
 };
 
@@ -164,6 +173,7 @@ export async function getCheckoutPageData(
   );
 
   if (eventResult.rowCount === 0) return null;
+  const eventRow = eventResult.rows[0] as CheckoutEventRow;
 
   const ticketCategoryResult = await query(
     `SELECT
@@ -187,6 +197,23 @@ export async function getCheckoutPageData(
 
   if (ticketCategoryResult.rowCount === 0) return null;
 
+  const seatResult = await query(
+    `SELECT
+       s.seat_id,
+       s.section,
+       s.row_number,
+       s.seat_number
+     FROM SEAT s
+     WHERE s.venue_id = $1
+       AND NOT EXISTS (
+         SELECT 1
+         FROM HAS_RELATIONSHIP hr
+         WHERE hr.seat_id = s.seat_id
+       )
+     ORDER BY s.section ASC, s.row_number ASC, s.seat_number ASC`,
+    [eventRow.venue_id]
+  );
+
   const promotionResult = await query(
     `SELECT
        promotion_id,
@@ -200,8 +227,6 @@ export async function getCheckoutPageData(
      WHERE CURRENT_DATE BETWEEN start_date AND end_date
      ORDER BY promo_code ASC`
   );
-
-  const eventRow = eventResult.rows[0] as CheckoutEventRow;
 
   return {
     customerId,
@@ -222,6 +247,12 @@ export async function getCheckoutPageData(
       price: toNumber(row.price),
       capacity: Number(row.capacity),
       remainingCapacity: Number(row.remaining_capacity),
+    })),
+    availableSeats: (seatResult.rows as CheckoutSeatRow[]).map((row) => ({
+      seatId: row.seat_id,
+      section: row.section,
+      row: row.row_number,
+      number: row.seat_number,
     })),
     promotions: (promotionResult.rows as PromotionRow[]).map(mapPromotion),
   };
@@ -303,8 +334,31 @@ export async function createOrderForCustomer(
     }
 
     const selectedSeats = parseSeats(payload.seats_input ?? "");
-    if (eventRow.seating_type === "reserved seating" && selectedSeats.length > quantity) {
-      throw new Error("Jumlah kursi yang dipilih tidak boleh melebihi jumlah tiket.");
+    if (eventRow.seating_type === "reserved seating") {
+      if (selectedSeats.length !== quantity) {
+        throw new Error("Pilih kursi sesuai jumlah tiket.");
+      }
+
+      if (new Set(selectedSeats).size !== selectedSeats.length) {
+        throw new Error("Kursi yang dipilih tidak boleh duplikat.");
+      }
+
+      const seatAvailabilityResult = await client.query(
+        `SELECT s.seat_id
+         FROM SEAT s
+         WHERE s.venue_id = $1
+           AND s.seat_id = ANY($2::uuid[])
+           AND NOT EXISTS (
+             SELECT 1
+             FROM HAS_RELATIONSHIP hr
+             WHERE hr.seat_id = s.seat_id
+           )`,
+        [eventRow.venue_id, selectedSeats]
+      );
+
+      if (seatAvailabilityResult.rowCount !== selectedSeats.length) {
+        throw new Error("Salah satu kursi sudah terisi atau tidak valid untuk venue ini.");
+      }
     }
 
     const subtotalAmount = toNumber(ticketCategoryRow.price) * quantity;
