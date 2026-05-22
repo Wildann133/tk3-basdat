@@ -158,6 +158,11 @@ export default function CheckoutClient({
       return;
     }
 
+    if (formState.quantity > selectedCategory.remainingCapacity) {
+      setErrorMessage(`Sisa tiket kategori ${selectedCategory.name} hanya ${selectedCategory.remainingCapacity}.`);
+      return;
+    }
+
     const selectedSeats = parseSeats(formState.seatsInput);
     if (isReservedSeating && selectedSeats.length > formState.quantity) {
       setErrorMessage("Jumlah kursi yang dipilih tidak boleh melebihi jumlah tiket.");
@@ -262,11 +267,36 @@ export default function CheckoutClient({
               >
                 <option value="">Pilih kategori tiket</option>
                 {ticketCategories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name} - {formatRupiah(category.price)}
+                  <option
+                    key={category.id}
+                    value={category.id}
+                    disabled={category.remainingCapacity <= 0}
+                  >
+                    {category.name} - {formatRupiah(category.price)} - Sisa {category.remainingCapacity}/{category.capacity}
                   </option>
                 ))}
               </select>
+              {selectedCategory && (
+                <div className="border-2 border-black bg-[#f9f6ef] p-3 text-sm font-bold">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>Sisa tiket kategori {selectedCategory.name}</span>
+                    <span className={`border-2 border-black px-2 py-1 font-black ${selectedCategory.remainingCapacity > 0 ? "bg-[#a7c957]" : "bg-[#e63946] text-white"}`}>
+                      {selectedCategory.remainingCapacity}/{selectedCategory.capacity}
+                    </span>
+                  </div>
+                  <div className="mt-2 h-2 border-2 border-black bg-white">
+                    <div
+                      className="h-full bg-black"
+                      style={{
+                        width: `${Math.min(
+                          100,
+                          Math.round(((selectedCategory.capacity - selectedCategory.remainingCapacity) / selectedCategory.capacity) * 100)
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="space-y-2">

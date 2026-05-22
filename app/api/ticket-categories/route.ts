@@ -4,6 +4,17 @@ import { randomUUID } from 'crypto';
 
 export const dynamic = 'force-dynamic';
 
+function getErrorMessage(error: unknown, fallback: string) {
+  return error instanceof Error && error.message.trim() ? error.message : fallback;
+}
+
+function getPgErrorCode(error: unknown) {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    return (error as { code?: string }).code;
+  }
+  return undefined;
+}
+
 // 1. GET: Ambil semua kategori tiket
 export async function GET(request: Request) {
   try {
@@ -20,10 +31,17 @@ export async function GET(request: Request) {
           tc.price, 
           e.event_title AS event_name,
           tc.tevent_id AS event_id,
-          (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count
+          (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count,
+          COALESCE(remaining.sisa_kuota, tc.quota)::int AS remaining_quota
         FROM TICKET_CATEGORY tc
         JOIN EVENT e ON tc.tevent_id = e.event_id
         JOIN ORGANIZER org ON org.organizer_id = e.organizer_id
+        LEFT JOIN LATERAL (
+          SELECT rq.sisa_kuota
+          FROM fn_get_remaining_quota(e.event_id) rq
+          WHERE rq.nama_kategori = tc.category_name
+          LIMIT 1
+        ) remaining ON TRUE
         WHERE org.user_id = $1
         ORDER BY e.event_title ASC
       `, [userId]);
@@ -36,16 +54,23 @@ export async function GET(request: Request) {
           tc.price, 
           e.event_title AS event_name,
           tc.tevent_id AS event_id,
-          (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count
+          (SELECT COUNT(*)::int FROM TICKET t WHERE t.tcategory_id = tc.category_id) AS ticket_count,
+          COALESCE(remaining.sisa_kuota, tc.quota)::int AS remaining_quota
         FROM TICKET_CATEGORY tc
         JOIN EVENT e ON tc.tevent_id = e.event_id
+        LEFT JOIN LATERAL (
+          SELECT rq.sisa_kuota
+          FROM fn_get_remaining_quota(e.event_id) rq
+          WHERE rq.nama_kategori = tc.category_name
+          LIMIT 1
+        ) remaining ON TRUE
         ORDER BY e.event_title ASC
       `);
     }
     return NextResponse.json(result.rows, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error GET Ticket Category:", error);
-    return NextResponse.json({ error: error.message || 'Gagal memuat kategori tiket' }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error, 'Gagal memuat kategori tiket') }, { status: 500 });
   }
 }
 
@@ -94,9 +119,9 @@ export async function POST(request: Request) {
     
     // Mengembalikan row agar frontend menerima object satuan, bukan array
     return NextResponse.json(result.rows, { status: 201 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error POST Ticket Category:", error);
-    return NextResponse.json({ error: error.message || 'Gagal menambah kategori tiket' }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error, 'Gagal menambah kategori tiket') }, { status: 500 });
   }
 }
 
@@ -146,9 +171,9 @@ export async function PUT(request: Request) {
     }
 
     return NextResponse.json(result.rows, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error PUT Ticket Category:", error);
-    return NextResponse.json({ error: error.message || 'Gagal mengupdate kategori tiket' }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error, 'Gagal mengupdate kategori tiket') }, { status: 500 });
   }
 }
 
@@ -167,12 +192,12 @@ export async function DELETE(request: Request) {
     }
 
     return NextResponse.json({ message: 'Kategori berhasil dihapus' }, { status: 200 });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("Error DELETE Ticket Category:", error);
     // Cek error code khusus dari constraint foreign key database
-    if (error.code === '23503') {
+    if (getPgErrorCode(error) === '23503') {
       return NextResponse.json({ error: 'Gagal hapus! Kategori ini sudah memiliki transaksi tiket.' }, { status: 409 });
     }
-    return NextResponse.json({ error: error.message || 'Gagal menghapus kategori' }, { status: 500 });
+    return NextResponse.json({ error: getErrorMessage(error, 'Gagal menghapus kategori') }, { status: 500 });
   }
 }

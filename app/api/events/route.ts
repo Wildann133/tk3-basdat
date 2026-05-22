@@ -26,6 +26,7 @@ type EventRow = {
         name: string;
         price: number;
         capacity: number;
+        remainingCapacity: number;
       }>
     | null;
 };
@@ -72,11 +73,18 @@ async function getEventRows(whereClause = "", params: string[] = []) {
            'id', tc.category_id,
            'name', tc.category_name,
            'price', tc.price,
-           'capacity', tc.quota
+           'capacity', tc.quota,
+           'remainingCapacity', COALESCE(remaining.sisa_kuota, tc.quota)
          )
          ORDER BY tc.price ASC, tc.category_name ASC
        ) AS ticket_categories
        FROM TICKET_CATEGORY tc
+       LEFT JOIN LATERAL (
+         SELECT rq.sisa_kuota
+         FROM fn_get_remaining_quota(e.event_id) rq
+         WHERE rq.nama_kategori = tc.category_name
+         LIMIT 1
+       ) remaining ON TRUE
        WHERE tc.tevent_id = e.event_id
      ) categories ON TRUE
      ${whereClause}

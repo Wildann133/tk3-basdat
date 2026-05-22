@@ -18,6 +18,7 @@ type CategoryOption = {
   price: number;
   event_id: string;
   ticket_count?: number;
+  remaining_quota?: number;
 };
 
 type SeatOption = {
@@ -108,10 +109,14 @@ export default function TicketForm({ onSave, userId }: TicketFormProps) {
   }, []);
 
   useEffect(() => {
-    fetchOrders();
-    fetchCategories();
-    fetchSeats();
-    fetchVenues();
+    void (async () => {
+      await Promise.all([
+        fetchOrders(),
+        fetchCategories(),
+        fetchSeats(),
+        fetchVenues(),
+      ]);
+    })();
   }, [fetchOrders, fetchCategories, fetchSeats, fetchVenues]);
 
   /* ── derived: selected order → event ── */
@@ -150,10 +155,11 @@ export default function TicketForm({ onSave, userId }: TicketFormProps) {
   const categoryOptions = useMemo(() => {
     return availableCategories.map((tc) => {
       const used = tc.ticket_count ?? 0;
-      const isFull = used >= tc.quota;
+      const remaining = tc.remaining_quota ?? Math.max(tc.quota - used, 0);
+      const isFull = remaining <= 0;
       return {
         value: tc.id,
-        label: `${tc.name} — Rp ${Number(tc.price).toLocaleString("id-ID")} (${used}/${tc.quota})`,
+        label: `${tc.name} — Rp ${Number(tc.price).toLocaleString("id-ID")} — Sisa ${remaining}/${tc.quota}`,
         disabled: isFull,
       };
     });
@@ -213,8 +219,8 @@ export default function TicketForm({ onSave, userId }: TicketFormProps) {
       setOpen(false);
       setError("");
       onSave(); // Refresh parent table
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Gagal membuat tiket");
     } finally {
       setSaving(false);
     }

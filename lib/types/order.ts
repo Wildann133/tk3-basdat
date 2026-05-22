@@ -5,6 +5,7 @@ export type TicketCategory = {
   name: string;
   price: number;
   capacity: number;
+  remainingCapacity: number;
 };
 
 export type CheckoutFormState = {

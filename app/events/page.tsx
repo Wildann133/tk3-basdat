@@ -14,6 +14,7 @@ type TicketCategory = {
   name: string;
   price: number;
   capacity: number;
+  remainingCapacity: number;
 };
 
 type EventApiRow = {
@@ -36,6 +37,7 @@ type TicketCategoryApiRow = {
   quota: number;
   price: number;
   event_id: string;
+  remaining_quota?: number;
 };
 
 type EventData = {
@@ -74,6 +76,7 @@ export default function EventsPage() {
             name: category.name,
             price: Number(category.price),
             capacity: Number(category.quota),
+            remainingCapacity: Number(category.remaining_quota ?? category.quota),
           });
           categoriesByEvent.set(category.event_id, current);
         });
@@ -241,6 +244,16 @@ export default function EventsPage() {
                               <span className="bg-white border-2 border-black text-xs font-bold px-2 py-1 rounded shadow-[2px_2px_0_0_#000]">
                                 {event.ticket_categories.length} kategori tiket
                               </span>
+                            </div>
+                            <div className="space-y-2">
+                              {event.ticket_categories.map((category) => (
+                                <div key={category.id} className="flex items-center justify-between gap-3 border-2 border-black bg-white px-3 py-2 text-xs font-bold">
+                                  <span className="truncate">{category.name}</span>
+                                  <span className={category.remainingCapacity > 0 ? "text-black" : "text-red-700"}>
+                                    Sisa {category.remainingCapacity}/{category.capacity}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
 

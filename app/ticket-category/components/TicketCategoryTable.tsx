@@ -3,12 +3,31 @@
 import { useState, useEffect } from "react";
 import TicketCategoryForm from "./TicketCategoryForm";
 
+type TicketCategory = {
+  id: string;
+  name: string;
+  quota: number | string;
+  price: number | string;
+  event_name: string;
+  event_id: string;
+  ticket_count?: number | string;
+  remaining_quota?: number | string;
+};
+
+type TicketCategoryPayload = {
+  id: string | null;
+  name: string;
+  quota: number;
+  price: number;
+  event_id: string;
+};
+
 export default function TicketCategoryTable({ role }: { role?: string }) {
   // Hanya admin dan organizer yang bisa memanajemen (CUD)
   // Guest atau customer hanya bisa read-only
   const canManage = role === "admin" || role === "organizer";
 
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<TicketCategory[]>([]);
   const [search, setSearch] = useState("");
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -38,7 +57,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
       });
   }, []);
 
-  const handleSave = async (payload: any) => {
+  const handleSave = async (payload: TicketCategoryPayload) => {
     const isEdit = !!payload.id;
     try {
       const res = await fetch('/api/ticket-categories', {
@@ -84,6 +103,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
     .sort((a, b) => a.name?.localeCompare(b.name));
 
   const categoryToDelete = categories.find((c) => c.id === deleteId);
+  const columnCount = canManage ? 7 : 6;
 
   return (
     <div>
@@ -119,6 +139,7 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
               <th className="px-5 py-3 text-left font-head text-[0.6rem] uppercase w-32">ID Kategori</th>
               <th className="px-5 py-3 text-left font-head text-[0.6rem] uppercase">Kategori</th>
               <th className="px-5 py-3 text-center font-head text-[0.6rem] uppercase">Quota</th>
+              <th className="px-5 py-3 text-center font-head text-[0.6rem] uppercase">Sisa Tiket</th>
               <th className="px-5 py-3 text-left font-head text-[0.6rem] uppercase">Harga</th>
               <th className="px-5 py-3 text-left font-head text-[0.6rem] uppercase">Event</th>
               {canManage && <th className="px-5 py-3 text-center font-head text-[0.6rem] uppercase w-44">Aksi</th>}
@@ -126,24 +147,42 @@ export default function TicketCategoryTable({ role }: { role?: string }) {
           </thead>
           <tbody>
             {isLoading ? (
-              <tr><td colSpan={canManage ? 6 : 5} className="py-10 text-center animate-pulse">Menghubungkan ke Neon...</td></tr>
+              <tr><td colSpan={columnCount} className="py-10 text-center animate-pulse">Menghubungkan ke Neon...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={canManage ? 6 : 5} className="py-10 text-center text-gray-400">Tidak ada kategori ditemukan.</td></tr>
-            ) : filtered.map((cat, i) => (
-              <tr key={cat.id} className={`border-b-2 border-black ${i % 2 === 0 ? "bg-white" : "bg-[#f9f6ef]"} hover:bg-[#fff9d6]`}>
-                <td className="px-5 py-3.5 font-mono text-xs text-gray-500 truncate max-w-[120px]" title={cat.id}>{cat.id}</td>
-                <td className="px-5 py-3.5 font-semibold text-black">{cat.name}</td>
-                <td className="px-5 py-3.5 text-center"><span className="bg-[#ffdb33] border-2 border-black px-2 py-0.5 text-[0.6rem] font-head">{cat.quota}</span></td>
-                <td className="px-5 py-3.5 font-semibold">Rp {cat.price.toLocaleString("id-ID")}</td>
-                <td className="px-5 py-3.5"><span className="border-2 border-black px-2 py-0.5 text-[0.6rem] font-head bg-white">{cat.event_name}</span></td>
-                {canManage && (
-                  <td className="px-5 py-3.5 text-center space-x-2">
-                    <TicketCategoryForm category={cat} onSave={handleSave} />
-                    <button onClick={() => setDeleteId(cat.id)} className="font-head text-[0.72rem] px-3 py-1.5 border-2 border-black bg-white shadow-[2px_2px_0_0_#000] hover:bg-[#e63946] hover:text-white transition-all cursor-pointer">Hapus</button>
+              <tr><td colSpan={columnCount} className="py-10 text-center text-gray-400">Tidak ada kategori ditemukan.</td></tr>
+            ) : filtered.map((cat, i) => {
+              const quota = Number(cat.quota);
+              const sold = Number(cat.ticket_count ?? 0);
+              const remaining = Number(cat.remaining_quota ?? Math.max(quota - sold, 0));
+              const soldPercent = quota > 0 ? Math.min(100, Math.round((sold / quota) * 100)) : 0;
+
+              return (
+                <tr key={cat.id} className={`border-b-2 border-black ${i % 2 === 0 ? "bg-white" : "bg-[#f9f6ef]"} hover:bg-[#fff9d6]`}>
+                  <td className="px-5 py-3.5 font-mono text-xs text-gray-500 truncate max-w-[120px]" title={cat.id}>{cat.id}</td>
+                  <td className="px-5 py-3.5 font-semibold text-black">{cat.name}</td>
+                  <td className="px-5 py-3.5 text-center"><span className="bg-[#ffdb33] border-2 border-black px-2 py-0.5 text-[0.6rem] font-head">{quota}</span></td>
+                  <td className="px-5 py-3.5 min-w-36">
+                    <div className="flex items-center justify-center gap-2">
+                      <span className={`border-2 border-black px-2 py-0.5 text-[0.6rem] font-head ${remaining > 0 ? "bg-[#a7c957] text-black" : "bg-[#e63946] text-white"}`}>
+                        {remaining}
+                      </span>
+                      <span className="text-[0.65rem] font-bold text-zinc-500">{sold}/{quota} terjual</span>
+                    </div>
+                    <div className="mt-2 h-2 border-2 border-black bg-white">
+                      <div className="h-full bg-black" style={{ width: `${soldPercent}%` }} />
+                    </div>
                   </td>
-                )}
-              </tr>
-            ))}
+                  <td className="px-5 py-3.5 font-semibold">Rp {Number(cat.price).toLocaleString("id-ID")}</td>
+                  <td className="px-5 py-3.5"><span className="border-2 border-black px-2 py-0.5 text-[0.6rem] font-head bg-white">{cat.event_name}</span></td>
+                  {canManage && (
+                    <td className="px-5 py-3.5 text-center space-x-2">
+                      <TicketCategoryForm category={cat} onSave={handleSave} />
+                      <button onClick={() => setDeleteId(cat.id)} className="font-head text-[0.72rem] px-3 py-1.5 border-2 border-black bg-white shadow-[2px_2px_0_0_#000] hover:bg-[#e63946] hover:text-white transition-all cursor-pointer">Hapus</button>
+                    </td>
+                  )}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

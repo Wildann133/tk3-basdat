@@ -34,6 +34,7 @@ type TicketCategoryRow = {
   name: string;
   price: string | number;
   capacity: number;
+  remaining_capacity: string | number;
 };
 
 type PromotionRow = {
@@ -166,13 +167,21 @@ export async function getCheckoutPageData(
 
   const ticketCategoryResult = await query(
     `SELECT
-       category_id AS id,
-       category_name AS name,
-       price,
-       quota AS capacity
-     FROM TICKET_CATEGORY
-     WHERE tevent_id = $1
-     ORDER BY price ASC, category_name ASC`,
+       tc.category_id AS id,
+       tc.category_name AS name,
+       tc.price,
+       tc.quota AS capacity,
+       COALESCE(remaining.sisa_kuota, tc.quota)::int AS remaining_capacity
+     FROM TICKET_CATEGORY tc
+     JOIN EVENT e ON e.event_id = tc.tevent_id
+     LEFT JOIN LATERAL (
+       SELECT rq.sisa_kuota
+       FROM fn_get_remaining_quota(e.event_id) rq
+       WHERE rq.nama_kategori = tc.category_name
+       LIMIT 1
+     ) remaining ON TRUE
+     WHERE tc.tevent_id = $1
+     ORDER BY tc.price ASC, tc.category_name ASC`,
     [eventId]
   );
 
@@ -212,6 +221,7 @@ export async function getCheckoutPageData(
       name: row.name,
       price: toNumber(row.price),
       capacity: Number(row.capacity),
+      remainingCapacity: Number(row.remaining_capacity),
     })),
     promotions: (promotionResult.rows as PromotionRow[]).map(mapPromotion),
   };
@@ -265,13 +275,21 @@ export async function createOrderForCustomer(
 
     const ticketCategoryResult = await client.query(
       `SELECT
-         category_id AS id,
-         category_name AS name,
-         price,
-         quota AS capacity
-       FROM TICKET_CATEGORY
-       WHERE category_id = $1
-         AND tevent_id = $2`,
+         tc.category_id AS id,
+         tc.category_name AS name,
+         tc.price,
+         tc.quota AS capacity,
+         COALESCE(remaining.sisa_kuota, tc.quota)::int AS remaining_capacity
+       FROM TICKET_CATEGORY tc
+       JOIN EVENT e ON e.event_id = tc.tevent_id
+       LEFT JOIN LATERAL (
+         SELECT rq.sisa_kuota
+         FROM fn_get_remaining_quota(e.event_id) rq
+         WHERE rq.nama_kategori = tc.category_name
+         LIMIT 1
+       ) remaining ON TRUE
+       WHERE tc.category_id = $1
+         AND tc.tevent_id = $2`,
       [payload.ticket_category_id, payload.event_id]
     );
 
@@ -280,6 +298,10 @@ export async function createOrderForCustomer(
     }
 
     const ticketCategoryRow = ticketCategoryResult.rows[0] as TicketCategoryRow;
+    if (quantity > Number(ticketCategoryRow.remaining_capacity)) {
+      throw new Error(`Sisa tiket kategori ${ticketCategoryRow.name} hanya ${ticketCategoryRow.remaining_capacity}.`);
+    }
+
     const selectedSeats = parseSeats(payload.seats_input ?? "");
     if (eventRow.seating_type === "reserved seating" && selectedSeats.length > quantity) {
       throw new Error("Jumlah kursi yang dipilih tidak boleh melebihi jumlah tiket.");
@@ -373,11 +395,16 @@ export async function createOrderForCustomer(
       discount_amount: discountAmount,
       subtotal_amount: subtotalAmount,
     };
-  } catch (err: any) {
+  } catch (err: unknown) {
     await client.query('ROLLBACK');
     // Tangkap custom exception dari PostgreSQL trigger
-    if (err.code === 'P0001') {
-      throw new Error(err.message);
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      err.code === 'P0001'
+    ) {
+      throw new Error(err instanceof Error ? err.message : "Trigger database menolak operasi.");
     }
     throw err;
   } finally {
