@@ -10,7 +10,11 @@ export async function GET() {
 
   try {
     const result = await query(
-      `SELECT organizer_id AS id, organizer_name AS name
+      `SELECT
+         organizer_id,
+         organizer_id AS id,
+         organizer_name,
+         organizer_name AS name
        FROM ORGANIZER
        ORDER BY organizer_name ASC`
     );
