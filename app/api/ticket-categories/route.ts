@@ -2,7 +2,6 @@ import { NextResponse } from 'next/server';
 import { query } from '@/lib/db';
 import { randomUUID } from 'crypto';
 
-// MEMATIKAN CACHE: Agar data selalu fresh tanpa perlu di-refresh manual
 export const dynamic = 'force-dynamic';
 
 // 1. GET: Ambil semua kategori tiket
@@ -60,6 +59,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Semua field wajib diisi' }, { status: 400 });
     }
 
+    // --- Pengecekan Kapasitas Venue ---
+    const checkQuery = await query(`
+      SELECT 
+        v.capacity,
+        (SELECT COALESCE(SUM(quota), 0) FROM TICKET_CATEGORY WHERE tevent_id = $1) AS used_quota
+      FROM EVENT e
+      JOIN VENUE v ON e.venue_id = v.venue_id
+      WHERE e.event_id = $1
+    `, [event_id]);
+
+    if (checkQuery.rows.length > 0) {
+      const { capacity, used_quota } = checkQuery.rows[0];
+      const sisaKapasitas = capacity - used_quota;
+
+      // Jika kuota yang mau diinput melebihi sisa kapasitas
+      if (Number(quota) > sisaKapasitas) {
+        return NextResponse.json(
+          { error: `Kuota melebihi kapasitas Venue! Sisa yang bisa ditambahkan hanya ${sisaKapasitas} tiket.` }, 
+          { status: 400 }
+        );
+      }
+    }
+    // ---------------------------------
+
     const newCategoryId = randomUUID();
 
     const result = await query(
@@ -73,12 +96,11 @@ export async function POST(request: Request) {
     return NextResponse.json(result.rows, { status: 201 });
   } catch (error: any) {
     console.error("Error POST Ticket Category:", error);
-    // KUNCI UTAMA: Mengembalikan pesan error asli dari PostgreSQL (Trigger)
     return NextResponse.json({ error: error.message || 'Gagal menambah kategori tiket' }, { status: 500 });
   }
 }
 
-// 3. PUT: Update kategori tiket (Fungsi yang sebelumnya hilang)
+// 3. PUT: Update kategori tiket
 export async function PUT(request: Request) {
   try {
     const { id, name, quota, price, event_id } = await request.json();
@@ -86,6 +108,30 @@ export async function PUT(request: Request) {
     if (!id || !name || quota == null || price == null || !event_id) {
       return NextResponse.json({ error: 'Semua field wajib diisi' }, { status: 400 });
     }
+
+    // --- Pengecekan Kapasitas Venue saat Update ---
+    const checkQuery = await query(`
+      SELECT 
+        v.capacity,
+        (SELECT COALESCE(SUM(quota), 0) FROM TICKET_CATEGORY WHERE tevent_id = $1 AND category_id != $2) AS used_quota
+      FROM EVENT e
+      JOIN VENUE v ON e.venue_id = v.venue_id
+      WHERE e.event_id = $1
+    `, [event_id, id]);
+
+    if (checkQuery.rows.length > 0) {
+      const { capacity, used_quota } = checkQuery.rows[0];
+      const sisaKapasitas = capacity - used_quota;
+
+      // Jika kuota baru melebihi sisa kapasitas
+      if (Number(quota) > sisaKapasitas) {
+        return NextResponse.json(
+          { error: `Update ditolak! Total kuota melebihi kapasitas Venue. Sisa maksimal: ${sisaKapasitas} tiket.` }, 
+          { status: 400 }
+        );
+      }
+    }
+    // ----------------------------------------------
 
     const result = await query(
       `UPDATE TICKET_CATEGORY 

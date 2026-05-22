@@ -15,6 +15,8 @@ export default async function Navbar() {
       case "admin":
         menus = [
           { href: "/dashboard", label: "Dashboard" },
+          { href: "/events", label: "Cari Event" },
+          { href: "/myevents", label: "Event Saya" },
           { href: "/venues", label: "Manajemen Venue" },
           { href: "/seats", label: "Manajemen Kursi" },
           { href: "/ticket-category", label: "Manajemen Kategori Tiket" },
